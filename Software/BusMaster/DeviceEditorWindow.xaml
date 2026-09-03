@@ -1,0 +1,179 @@
+<Window x:Class="DeviceEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BusMaster"
+        mc:Ignorable="d"
+        Title="Device Editor"
+        Height="560" Width="940" MinHeight="380" MinWidth="720"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush_Window_Background}"
+        Foreground="{StaticResource Brush_Text_Primary}"
+        FontFamily="Segoe UI" FontSize="12"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <DockPanel LastChildFill="True">
+
+        <!-- ==================================================================
+             Fixed header region. Labels above their boxes; the description
+             takes whatever width the three sized fields leave.
+             ================================================================== -->
+        <Grid x:Name="grd_Header" DockPanel.Dock="Top" Margin="10,10,10,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Label x:Name="lbl_DeviceName" Grid.Row="0" Grid.Column="0"
+                   Style="{StaticResource Style_Editor_Label}" Margin="0,0,8,0" Content="Device Name"/>
+            <TextBox x:Name="txt_DeviceName" Grid.Row="1" Grid.Column="0"
+                     Style="{StaticResource Style_Editor_Field}"
+                     Width="92" Margin="0,0,8,0"
+                     TextChanged="txt_DeviceName_TextChanged"/>
+
+            <Label x:Name="lbl_DeviceDescription" Grid.Row="0" Grid.Column="1"
+                   Style="{StaticResource Style_Editor_Label}" Margin="0,0,8,0" Content="Device Description"/>
+            <TextBox x:Name="txt_DeviceDescription" Grid.Row="1" Grid.Column="1"
+                     Style="{StaticResource Style_Editor_Field}"
+                     MinWidth="120" Margin="0,0,8,0"
+                     TextChanged="txt_DeviceDescription_TextChanged"/>
+
+            <Label x:Name="lbl_BaseAddress" Grid.Row="0" Grid.Column="2"
+                   Style="{StaticResource Style_Editor_Label}" Margin="0,0,8,0" Content="Base Address"/>
+            <TextBox x:Name="txt_BaseAddress" Grid.Row="1" Grid.Column="2"
+                     Style="{StaticResource Style_Editor_Field}"
+                     Width="42" MaxLength="3" Margin="0,0,8,0"
+                     TextAlignment="Center"
+                     TextChanged="txt_BaseAddress_TextChanged"/>
+
+            <!-- Live readout of the 7 bit address the part will really answer to.
+                 In line with the boxes, not with the labels. -->
+            <TextBlock x:Name="lbl_AddressReadout" Grid.Row="1" Grid.Column="3"
+                       Style="{StaticResource Style_Editor_Address_Readout}"
+                       Width="118" Margin="0,0,8,0"/>
+
+            <Label x:Name="lbl_AddressBits" Grid.Row="0" Grid.Column="4"
+                   Style="{StaticResource Style_Editor_Label}" Content="Address bits"/>
+            <!-- 0 to 7, so a single digit is all it can ever hold. -->
+            <TextBox x:Name="txt_AddressBits" Grid.Row="1" Grid.Column="4"
+                     Style="{StaticResource Style_Editor_Field}"
+                     Width="34" MaxLength="1"
+                     TextAlignment="Center"
+                     TextChanged="txt_AddressBits_TextChanged"/>
+        </Grid>
+
+        <!-- ==================================================================
+             Save / Cancel
+             ================================================================== -->
+        <Grid x:Name="grd_Buttons" DockPanel.Dock="Bottom" Margin="10,8,10,10">
+            <Button x:Name="btn_Cancel" HorizontalAlignment="Left"
+                    Content="_Cancel" IsCancel="True" Click="btn_Cancel_Click"/>
+            <Button x:Name="btn_Save" HorizontalAlignment="Right"
+                    Content="_Save" IsDefault="True" Click="btn_Save_Click"/>
+        </Grid>
+
+        <!-- ==================================================================
+             Register table. Register Address is 75% black on white; the eight
+             data columns are black on light blue.
+             ================================================================== -->
+        <DataGrid x:Name="grd_Registers"
+                  Margin="10,0,10,0"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="False"
+                  CanUserSortColumns="True"
+                  HeadersVisibility="Column"
+                  RowHeaderWidth="0"
+                  SelectionUnit="Cell"
+                  SelectionMode="Extended">
+            <DataGrid.Columns>
+
+                <!-- The only sortable column. The header click is intercepted so the
+                     addresses sort as numbers rather than as text. -->
+                <DataGridTextColumn Header="Register Address" Width="118"
+                                    Binding="{Binding RegisterAddress, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="True"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Address}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Address}"/>
+
+                <DataGridTextColumn Header="Register Name" Width="150"
+                                    Binding="{Binding RegisterName, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D7" Width="*"
+                                    Binding="{Binding D7, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D6" Width="*"
+                                    Binding="{Binding D6, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D5" Width="*"
+                                    Binding="{Binding D5, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D4" Width="*"
+                                    Binding="{Binding D4, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D3" Width="*"
+                                    Binding="{Binding D3, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D2" Width="*"
+                                    Binding="{Binding D2, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D1" Width="*"
+                                    Binding="{Binding D1, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+                <DataGridTextColumn Header="D0" Width="*"
+                                    Binding="{Binding D0, UpdateSourceTrigger=PropertyChanged}"
+                                    CanUserSort="False"
+                                    CellStyle="{StaticResource Style_Grid_Cell_Data}"
+                                    ElementStyle="{StaticResource Style_Grid_Display}"
+                                    EditingElementStyle="{StaticResource Style_Grid_Edit_Data}"/>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </DockPanel>
+</Window>

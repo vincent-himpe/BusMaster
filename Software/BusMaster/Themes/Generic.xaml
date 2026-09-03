@@ -1,0 +1,300 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:BusMaster">
+
+    <!-- ==========================================================================
+         Default style for BitFieldEditor.
+
+         WPF loads this dictionary on its own, so it cannot see the application's
+         resources at parse time. Every theme colour below is therefore a
+         DynamicResource, resolved at runtime through the element tree up into
+         Application.Resources - which is where VisualStudioDark.xaml lives.
+
+         The eight regions are not declared here. The control builds them in
+         OnApplyTemplate and drops them into PART_Fields, because their colour and
+         caption change with Value and Fieldnames.
+         ========================================================================== -->
+
+    <Style TargetType="{x:Type local:BitFieldEditor}">
+
+        <Setter Property="Background" Value="{DynamicResource Brush_Chrome_Background}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush_Chrome_Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush_Text_Primary}"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="12"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:BitFieldEditor}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="True">
+                        <!-- [ name ][ value ][ eight regions ][ lock ] -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Register address and name. The Border carries the
+                                 backdrop so it fills the full height; the TextBlock
+                                 is sized for twenty fixed pitch characters - a six
+                                 character "(nn)" bracket plus the fourteen the
+                                 control truncates names to. -->
+                            <Border Grid.Column="0"
+                                    Background="{DynamicResource Brush_Register_Name_Background}"
+                                    BorderBrush="{DynamicResource Brush_Chrome_Border}"
+                                    BorderThickness="0,0,1,0"
+                                    SnapsToDevicePixels="True">
+                                <TextBlock x:Name="PART_Name"
+                                           Width="134"
+                                           Margin="4,0"
+                                           FontFamily="Consolas"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush_Register_Name_Text}"/>
+                            </Border>
+
+                            <!-- Four characters wide in a fixed pitch font, so "255"
+                                 and "FF" both sit comfortably. MaxLength is set by
+                                 the control to suit the current mode. -->
+                            <TextBox x:Name="PART_Value"
+                                     Grid.Column="1"
+                                     Width="40"
+                                     Padding="2,0"
+                                     BorderThickness="0,0,1,0"
+                                     FontFamily="Consolas"
+                                     FontSize="12"
+                                     TextAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Type a value and press Enter"/>
+
+                            <!-- Eight equal cells that share whatever width is left,
+                                 which is what makes the regions scale together. -->
+                            <UniformGrid x:Name="PART_Fields"
+                                         Grid.Column="2"
+                                         Rows="1"
+                                         Columns="8"/>
+
+                            <!-- The lock. A CheckBox whose box is replaced by an open
+                                 or closed padlock glyph: blue and regular when open,
+                                 red and bold when shut. -->
+                            <CheckBox x:Name="PART_Lock"
+                                      Grid.Column="3"
+                                      Focusable="True"
+                                      VerticalAlignment="Stretch"
+                                      IsChecked="{Binding IsLocked, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                      ToolTip="Keep this register on show when the device is collapsed">
+                                <CheckBox.Template>
+                                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                                        <Border x:Name="bdr_Lock"
+                                                Background="Transparent"
+                                                BorderBrush="{DynamicResource Brush_Chrome_Border}"
+                                                BorderThickness="1,0,0,0"
+                                                Padding="4,0"
+                                                SnapsToDevicePixels="True">
+                                            <TextBlock x:Name="txt_LockGlyph"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="12"
+                                                       FontWeight="Normal"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource Brush_Lock_Open}"
+                                                       Text="&#xE785;"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="txt_LockGlyph" Property="Text" Value="&#xE72E;"/>
+                                                <Setter TargetName="txt_LockGlyph" Property="FontWeight" Value="Bold"/>
+                                                <Setter TargetName="txt_LockGlyph" Property="Foreground"
+                                                        Value="{DynamicResource Brush_Lock_Shut}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="bdr_Lock" Property="Background"
+                                                        Value="{DynamicResource Brush_Item_Hover}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </CheckBox.Template>
+                            </CheckBox>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ==========================================================================
+         Default style for DevicePanel.
+
+         A dark header bar carrying the device name and a disclosure triangle, over
+         a lighter backdrop that holds the panel's content.
+         ========================================================================== -->
+
+    <Style TargetType="{x:Type local:DevicePanel}">
+
+        <Setter Property="MinWidth" Value="500"/>
+        <Setter Property="Background" Value="{DynamicResource Brush_Device_Backdrop}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush_Chrome_Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush_Text_Primary}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:DevicePanel}">
+                    <!-- Rounded outside, with the header and the gutter carrying the
+                         matching inner radii so nothing squares off a corner. -->
+                    <Border BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="10"
+                            Background="#FF000000"
+                            SnapsToDevicePixels="True">
+                        <DockPanel LastChildFill="True">
+
+                            <!-- Header bar, 85% grey -->
+                            <Border x:Name="bdr_Header"
+                                    DockPanel.Dock="Top"
+                                    Background="{DynamicResource Brush_Device_Header}"
+                                    CornerRadius="9,9,0,0"
+                                    Padding="8,4"
+                                    SnapsToDevicePixels="True">
+
+                                <!-- The right-click menu is built by the control and
+                                     hung on this Border: a ContextMenu is not part
+                                     of the template's visual tree, so declaring it
+                                     here would put it out of GetTemplateChild's
+                                     reach. The Border is what carries the hit test
+                                     for the empty stretch of the header. -->
+                                <DockPanel LastChildFill="False">
+
+                                    <!-- Shared with the expand-all button on the main
+                                         toolbar, so the two always look alike. -->
+                                    <ToggleButton x:Name="PART_Disclosure"
+                                                  DockPanel.Dock="Right"
+                                                  Margin="8,0,0,0"
+                                                  Style="{DynamicResource Style_Disclosure_Toggle}"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                  ToolTip="Show or hide this device"/>
+
+                                    <!-- Device name, address and description, built
+                                         from coloured runs by the control. Two
+                                         points smaller than the function name and
+                                         regular weight. -->
+                                    <TextBlock x:Name="PART_Summary"
+                                               DockPanel.Dock="Right"
+                                               Margin="12,0,10,0"
+                                               FontSize="12"
+                                               FontWeight="Normal"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+
+                                    <!-- Which strapped address this one answers on.
+                                         Declared after the summary so that, in a
+                                         DockPanel, it lands to the left of it.
+                                         Hidden until a device is loaded. -->
+                                    <StackPanel x:Name="PART_TargetHost"
+                                                DockPanel.Dock="Right"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center"
+                                                Visibility="Collapsed">
+                                        <TextBlock Text="Target"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,6,0"
+                                                   Foreground="{DynamicResource Brush_Header_Plain}"/>
+                                        <ComboBox x:Name="PART_Target"
+                                                  FontSize="12"
+                                                  MinWidth="62"
+                                                  VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <!-- Click to edit. A TextBox that reads as a
+                                         label until the pointer is over it, so an
+                                         empty one can still be found and clicked.
+                                         Everything is set through the Style, since a
+                                         local value would win over its triggers. -->
+                                    <TextBox x:Name="txt_FunctionName"
+                                             DockPanel.Dock="Left"
+                                             Text="{Binding FunctionName, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <TextBox.Style>
+                                            <Style TargetType="{x:Type TextBox}">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <!-- Sizes to whatever is typed. The floor
+                                                     only keeps an empty one clickable. -->
+                                                <Setter Property="MinWidth" Value="40"/>
+                                                <Setter Property="FontSize" Value="14"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="Padding" Value="3,1"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource Brush_Function_Name}"/>
+                                                <Setter Property="CaretBrush" Value="{DynamicResource Brush_Function_Name}"/>
+                                                <Setter Property="SelectionBrush" Value="{DynamicResource Brush_Accent}"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource Brush_Item_Hover}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource Brush_Input_Background}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Backdrop, 75% grey.
+
+                                 No padding at the sides: LoadDevice indents its
+                                 registers a fixed distance from the panel's own
+                                 edge, so anything here would push them out of true.
+                                 The bottom gutter is the only breathing room, and it
+                                 is what the panel closes down to. Hand-written
+                                 content sets its own margins.
+
+                                 MinHeight is set by the control: nothing when there
+                                 are registers, so the panel can shrink to just the
+                                 ones still showing. -->
+                            <Border x:Name="bdr_Content"
+                                    Background="{TemplateBinding Background}"
+                                    MinHeight="0"
+                                    SnapsToDevicePixels="True">
+                                <DockPanel LastChildFill="True">
+                                    <!-- The gutter is black rather than backdrop
+                                         grey, so a panel collapsed down to nothing
+                                         still ends on a clean edge. -->
+                                    <Border DockPanel.Dock="Bottom"
+                                            Height="4"
+                                            Background="#FF000000"
+                                            CornerRadius="0,0,9,9"
+                                            SnapsToDevicePixels="True"/>
+                                    <ContentPresenter x:Name="PART_Content"/>
+                                </DockPanel>
+                            </Border>
+
+                        </DockPanel>
+                    </Border>
+
+                    <!-- No trigger on IsExpanded: collapsing is not a straight hide.
+                         The control decides which registers survive it. -->
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
+

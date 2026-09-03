@@ -1,0 +1,379 @@
+<Window x:Class="MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BusMaster"
+        mc:Ignorable="d"
+        Title="BusMaster"
+        Height="650" Width="1000" MinHeight="600" MinWidth="600"
+        Background="{StaticResource Brush_Window_Background}"
+        Foreground="{StaticResource Brush_Text_Primary}"
+        FontFamily="Segoe UI" FontSize="12"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <!-- Keyboard shortcuts. These route to the same subroutines the menu and the
+         toolbar call, so there is exactly one implementation of every command. -->
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.New"    Executed="Cmd_New_Executed"/>
+        <CommandBinding Command="ApplicationCommands.Open"   Executed="Cmd_Open_Executed"/>
+        <CommandBinding Command="ApplicationCommands.Save"   Executed="Cmd_Save_Executed"/>
+        <CommandBinding Command="ApplicationCommands.SaveAs" Executed="Cmd_SaveAs_Executed"/>
+        <CommandBinding Command="ApplicationCommands.Help"   Executed="Cmd_Help_Executed"/>
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <!-- New / Open / Save / Help already carry their standard gestures. -->
+        <KeyBinding Command="ApplicationCommands.SaveAs" Key="S" Modifiers="Ctrl+Shift"/>
+    </Window.InputBindings>
+
+    <DockPanel LastChildFill="True">
+
+        <!-- ==================================================================
+             Menu bar
+             ================================================================== -->
+        <Menu x:Name="mnu_Main" DockPanel.Dock="Top">
+            <MenuItem x:Name="mnu_File" Header="_File">
+
+                <MenuItem x:Name="mnu_File_New_Project"
+                          Header="_New Project"
+                          InputGestureText="Ctrl+N"
+                          Click="mnu_File_New_Project_Click"/>
+
+                <MenuItem x:Name="mnu_File_Open_Project"
+                          Header="_Open Project..."
+                          InputGestureText="Ctrl+O"
+                          Click="mnu_File_Open_Project_Click"/>
+
+                <MenuItem x:Name="mnu_File_Save_Project"
+                          Header="_Save Project"
+                          InputGestureText="Ctrl+S"
+                          Click="mnu_File_Save_Project_Click"/>
+
+                <MenuItem x:Name="mnu_File_Save_Project_As"
+                          Header="Save Project _As..."
+                          InputGestureText="Ctrl+Shift+S"
+                          Click="mnu_File_Save_Project_As_Click"/>
+
+                <Separator x:Name="mnu_File_Separator_1"/>
+
+                <!-- Caption for the MRU block. Disabled on purpose: it is a label,
+                     not a command. -->
+                <MenuItem x:Name="mnu_File_Recently_Used"
+                          Header="Recently Used"
+                          IsEnabled="False"/>
+
+                <MenuItem x:Name="mnu_File_Recent_1" Click="mnu_File_Recent_Click"/>
+                <MenuItem x:Name="mnu_File_Recent_2" Click="mnu_File_Recent_Click"/>
+                <MenuItem x:Name="mnu_File_Recent_3" Click="mnu_File_Recent_Click"/>
+                <MenuItem x:Name="mnu_File_Recent_4" Click="mnu_File_Recent_Click"/>
+                <MenuItem x:Name="mnu_File_Recent_5" Click="mnu_File_Recent_Click"/>
+
+                <MenuItem x:Name="mnu_File_Recent_Empty"
+                          Header="(no recent projects)"
+                          IsEnabled="False"/>
+
+                <Separator x:Name="mnu_File_Separator_2"/>
+
+                <!-- "O" is already Open Project's, so Options takes P. -->
+                <MenuItem x:Name="mnu_File_Options"
+                          Header="O_ptions..."
+                          Click="mnu_File_Options_Click"/>
+
+                <Separator x:Name="mnu_File_Separator_3"/>
+
+                <MenuItem x:Name="mnu_File_Exit"
+                          Header="E_xit"
+                          InputGestureText="Alt+F4"
+                          Click="mnu_File_Exit_Click"/>
+
+            </MenuItem>
+
+            <MenuItem x:Name="mnu_View" Header="_View">
+
+                <MenuItem x:Name="mnu_View_Decimal"
+                          Header="_Decimal"
+                          IsCheckable="True"
+                          Click="mnu_View_Decimal_Click"/>
+
+                <MenuItem x:Name="mnu_View_Hexadecimal"
+                          Header="_Hexadecimal"
+                          IsCheckable="True"
+                          Click="mnu_View_Hexadecimal_Click"/>
+
+            </MenuItem>
+
+            <MenuItem x:Name="mnu_Device" Header="_Device">
+
+                <MenuItem x:Name="mnu_Device_Add_Device"
+                          Header="_Add Device..."
+                          Click="mnu_Device_Add_Device_Click"/>
+
+                <MenuItem x:Name="mnu_Device_Remove_Device"
+                          Header="_Remove Device"
+                          Click="mnu_Device_Remove_Device_Click"/>
+
+            </MenuItem>
+
+            <MenuItem x:Name="mnu_Bus" Header="_Bus">
+
+                <MenuItem x:Name="mnu_Bus_Scan_Bus"
+                          Header="_Scan Bus"
+                          Click="mnu_Bus_Scan_Bus_Click"/>
+
+                <MenuItem x:Name="mnu_Bus_Poll_Bus"
+                          Header="_Poll Bus"
+                          Click="mnu_Bus_Poll_Bus_Click"/>
+
+                <MenuItem x:Name="mnu_Bus_Reset_Bus"
+                          Header="_Reset Bus"
+                          Click="mnu_Bus_Reset_Bus_Click"/>
+
+            </MenuItem>
+
+            <MenuItem x:Name="mnu_Tools" Header="_Tools">
+
+                <MenuItem x:Name="mnu_Tools_Create_Device"
+                          Header="_Create Device..."
+                          Click="mnu_Tools_Create_Device_Click"/>
+
+                <MenuItem x:Name="mnu_Tools_Edit_Device"
+                          Header="_Edit Device..."
+                          Click="mnu_Tools_Edit_Device_Click"/>
+
+                <MenuItem x:Name="mnu_Tools_Clone_Device"
+                          Header="C_lone Device..."
+                          Click="mnu_Tools_Clone_Device_Click"/>
+
+                <Separator x:Name="mnu_Tools_Separator_1"/>
+
+                <MenuItem x:Name="mnu_Tools_Show_Log"
+                          Header="Show _Log"
+                          Click="mnu_Tools_Show_Log_Click"/>
+
+                <Separator x:Name="mnu_Tools_Separator_2"/>
+
+                <MenuItem x:Name="mnu_Tools_Show_Config_Files"
+                          Header="Show Config Files"
+                          Click="mnu_Tools_Show_Config_Files_Click"/>
+
+                <MenuItem x:Name="mnu_Tools_Show_Dev_Files"
+                          Header="Show Dev Files"
+                          Click="mnu_Tools_Show_Dev_Files_Click"/>
+
+                <MenuItem x:Name="mnu_Tools_Show_Project_Files"
+                          Header="Show Project Files"
+                          Click="mnu_Tools_Show_Project_Files_Click"/>
+
+            </MenuItem>
+        </Menu>
+
+        <!-- ==================================================================
+             Tool bar
+             ================================================================== -->
+        <Border x:Name="tlbr_Main"
+                DockPanel.Dock="Top"
+                Background="{StaticResource Brush_Chrome_Background}"
+                BorderBrush="{StaticResource Brush_Chrome_Border}"
+                BorderThickness="0,0,0,1"
+                Padding="4,3">
+            <DockPanel LastChildFill="False">
+
+                <Button x:Name="tlbr_Open"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Button}"
+                        Content="&#xED25;"
+                        ToolTip="Open Project (Ctrl+O)"
+                        Click="tlbr_Open_Click"/>
+
+                <Button x:Name="tlbr_Save"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Button}"
+                        Content="&#xE74E;"
+                        ToolTip="Save Project (Ctrl+S)"
+                        Click="tlbr_Save_Click"/>
+
+                <Button x:Name="tlbr_ShowLog"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Button}"
+                        Foreground="{StaticResource Brush_Workspace_Action}"
+                        Content="&#xE7C3;"
+                        ToolTip="Show the event log"
+                        Click="tlbr_ShowLog_Click"/>
+
+                <!-- Arms the log. Unchecked - two bars - is paused, and is where it
+                     starts, so nothing is recorded until it is asked for. -->
+                <ToggleButton x:Name="tlbr_Record"
+                              DockPanel.Dock="Left"
+                              Style="{StaticResource Style_Toolbar_Record_Toggle}"
+                              Checked="tlbr_Record_Checked"
+                              Unchecked="tlbr_Record_Unchecked"/>
+
+                <Separator x:Name="tlbr_Separator_Left"
+                           DockPanel.Dock="Left"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <Button x:Name="tlbr_ValueType"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Text_Button}"
+                        Content="DEC"
+                        ToolTip="Show every register value in decimal or hexadecimal"
+                        Click="tlbr_ValueType_Click"/>
+
+                <!-- Right-docked children fill from the right edge inwards, so the
+                     first one declared ends up outermost. Reading the block below
+                     bottom-up gives the order on screen. -->
+                <ToggleButton x:Name="tlbr_CollapseAll"
+                              DockPanel.Dock="Right"
+                              Margin="2,0,2,0"
+                              IsChecked="True"
+                              Style="{StaticResource Style_Disclosure_Toggle}"
+                              ToolTip="Open or close every device"
+                              Checked="tlbr_CollapseAll_Checked"
+                              Unchecked="tlbr_CollapseAll_Unchecked"/>
+
+                <Separator x:Name="tlbr_Workspace_Divider_Right"
+                           DockPanel.Dock="Right"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <Button x:Name="tlbr_Workspace_Delete"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Style_Toolbar_Workspace_Button}"
+                        Content="Delete"
+                        ToolTip="Delete the selected workspace"
+                        Click="tlbr_Workspace_Delete_Click"/>
+
+                <Button x:Name="tlbr_Workspace_Save"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Style_Toolbar_Workspace_Button}"
+                        Content="Save"
+                        ToolTip="Save the devices on screen as a workspace"
+                        Click="tlbr_Workspace_Save_Click"/>
+
+                <ComboBox x:Name="tlbr_Workspace_List"
+                          DockPanel.Dock="Right"
+                          Width="150"
+                          Margin="4,0"
+                          VerticalAlignment="Center"
+                          ToolTip="Saved workspaces"/>
+
+                <TextBlock x:Name="tlbr_Workspace_Label"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource Brush_Workspace_Action}"
+                           Text="Workspace"/>
+
+                <Separator x:Name="tlbr_Workspace_Divider_Left"
+                           DockPanel.Dock="Right"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <Button x:Name="tlbr_Help"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Style_Toolbar_Button}"
+                        Content="&#xE897;"
+                        ToolTip="Help (F1)"
+                        Click="tlbr_Help_Click"/>
+
+                <!-- Declared last of the right-docked children, so it lands furthest
+                     left - ahead of everything else on that side. -->
+                <Separator x:Name="tlbr_Operation_Divider_Right"
+                           DockPanel.Dock="Right"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <Button x:Name="tlbr_Write_All"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Style_Toolbar_Text_Button}"
+                        Width="70"
+                        FontFamily="Segoe UI"
+                        FontWeight="SemiBold"
+                        Content="Write All"
+                        ToolTip="Write every register to every device"
+                        Click="tlbr_Write_All_Click"/>
+
+                <ComboBox x:Name="tlbr_Operation_List"
+                          DockPanel.Dock="Right"
+                          Width="160"
+                          Margin="4,0"
+                          VerticalAlignment="Center"
+                          SelectedIndex="0"
+                          ToolTip="When a change is written to the bus"
+                          SelectionChanged="tlbr_Operation_List_SelectionChanged">
+                    <ComboBoxItem Content="Register On Change"/>
+                    <ComboBoxItem Content="Device On Change"/>
+                </ComboBox>
+
+                <TextBlock x:Name="tlbr_Operation_Label"
+                           DockPanel.Dock="Right"
+                           Margin="8,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource Brush_Text_Primary}"
+                           Text="Operation"/>
+
+                <Separator x:Name="tlbr_Operation_Divider_Left"
+                           DockPanel.Dock="Right"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ==================================================================
+             Status bar
+             ================================================================== -->
+        <StatusBar x:Name="sbar_Main" DockPanel.Dock="Bottom">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <StatusBarItem x:Name="sbar_ActiveProject"
+                           Grid.Column="0"
+                           Content="No project"/>
+
+            <Separator x:Name="sbar_Separator_1" Grid.Column="1"/>
+
+            <StatusBarItem x:Name="sbar_status"
+                           Grid.Column="2"
+                           MinWidth="260"
+                           HorizontalContentAlignment="Left"
+                           Content="Ready"/>
+        </StatusBar>
+
+        <!-- ==================================================================
+             Workspace - the application's real content goes here
+             ================================================================== -->
+        <!-- The devices on the bus, stacked. Both handlers are attached here rather
+             than on each panel: the events bubble, so one of each covers every
+             device added later as well. -->
+        <!-- The checkerboard is built in code from the constants in AppSettings. -->
+        <ScrollViewer x:Name="scr_Workspace"
+                      VerticalScrollBarVisibility="Visible"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="stk_Devices"
+                        Orientation="Vertical"
+                        Background="Transparent"
+                        local:BitFieldEditor.IllegalEntry="stk_Devices_IllegalEntry"
+                        local:DevicePanel.LoadFailed="stk_Devices_LoadFailed"
+                        local:DevicePanel.CloneRequested="stk_Devices_CloneRequested"
+                        local:DevicePanel.DeleteRequested="stk_Devices_DeleteRequested">
+
+                <local:DevicePanel x:Name="dvp_Device"
+                                   Margin="0,0,0,6"
+                                   HorizontalAlignment="Stretch"
+                                   FunctionName="Front panel I/O"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

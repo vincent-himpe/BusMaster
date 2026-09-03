@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(dotnet build \"C:\\\\GitHub\\\\BusMaster\\\\Software\\\\BusMaster\\\\BusMaster.vbproj\" -v minimal -nologo)",
+      "PowerShell(& \"C:\\\\Users\\\\VINCEN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--GitHub-BusMaster-Software-BusMaster\\\\a15681ab-edcf-4d80-a0a3-3f6992796eeb\\\\scratchpad\\\\capture.ps1\" -Exe \"C:\\\\GitHub\\\\BusMaster\\\\Software\\\\BusMaster\\\\bin\\\\Debug\\\\net8.0-windows\\\\BusMaster.exe\" -Out \"C:\\\\Users\\\\VINCEN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--GitHub-BusMaster-Software-BusMaster\\\\a15681ab-edcf-4d80-a0a3-3f6992796eeb\\\\scratchpad\\\\shot.png\")",
+      "PowerShell(& \"C:\\\\Users\\\\VINCEN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--GitHub-BusMaster-Software-BusMaster\\\\a15681ab-edcf-4d80-a0a3-3f6992796eeb\\\\scratchpad\\\\capture_menu.ps1\" -Exe \"C:\\\\GitHub\\\\BusMaster\\\\Software\\\\BusMaster\\\\bin\\\\Debug\\\\net8.0-windows\\\\BusMaster.exe\" -Out \"C:\\\\Users\\\\VINCEN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--GitHub-BusMaster-Software-BusMaster\\\\a15681ab-edcf-4d80-a0a3-3f6992796eeb\\\\scratchpad\\\\menu.png\")",
+      "PowerShell(Get-Process -Id 57916 -ErrorAction SilentlyContinue)",
+      "PowerShell(dotnet build \"C:\\\\GitHub\\\\BusMaster\\\\Software\\\\BusMaster\\\\BusMaster.vbproj\" -v minimal -nologo -o $out)"
+    ]
+  }
+}

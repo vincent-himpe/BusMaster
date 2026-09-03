@@ -1,0 +1,4 @@
+' device name, device description, base address , address bits 
+PCF8574,8-Bit I/O Expander,50,3
+' register address , bit names
+-1,D7,D6,D5,D4,D3,D2,D1,D0
