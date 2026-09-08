@@ -53,6 +53,14 @@ Public Module BusEvents
                                           BitFieldEditor.ValueChangedEvent,
                                           New RoutedEventHandler(AddressOf BitFieldValueChanged))
 
+        EventManager.RegisterClassHandler(GetType(BitFieldEditor),
+                                          BitFieldEditor.WriteRequestedEvent,
+                                          New RoutedEventHandler(AddressOf BitFieldWriteRequest))
+
+        EventManager.RegisterClassHandler(GetType(BitFieldEditor),
+                                          BitFieldEditor.ReadRequestedEvent,
+                                          New RoutedEventHandler(AddressOf BitFieldReadRequest))
+
         Registered = True
 
     End Sub
@@ -70,10 +78,160 @@ Public Module BusEvents
         Dim editor As BitFieldEditor = TryCast(sender, BitFieldEditor)
         If editor Is Nothing Then Exit Sub
 
+        ' How much goes out is the Operation setting's business, not this control's.
+        If AppCore.OperationMode = BusOperationMode.mode_DeviceOnChange Then
+
+            Dim panel As DevicePanel = OwningPanel(editor)
+
+            If panel IsNot Nothing Then
+                WriteDevice(panel)
+                Exit Sub
+            End If
+
+            ' A register with no device around it has only itself to write.
+
+        End If
+
+        editor.RequestWrite()
+
+    End Sub
+
+
+    ' ========================================================================
+    '  Whole-device and whole-system operations
+    '
+    '  Fenced off in the log, so a run of registers that was asked for as one
+    '  thing reads as one thing.
+    '
+    '  The labels are laid out by hand and written out in full rather than built
+    '  from a pattern - they are all exactly BlockLabelWidth characters, which is
+    '  what makes them line up under the grid's fixed-width font, and that is
+    '  easier to see and keep true when the text is right here to look at. The
+    '  trailing space in "Read " is what keeps it the same width as "Write".
+    ' ========================================================================
+
+    ''' <summary>What every block label measures. Checked by the tests, not by eye.</summary>
+    Public Const BlockLabelWidth As Integer = 48
+
+    Private Const BlockBeginDeviceWrite As String = "---=========== Begin Device Write ===========---"
+    Private Const BlockEndDeviceWrite As String = "--------------  End Device Write  --------------"
+
+    Private Const BlockBeginDeviceRead As String = "---=========== Begin Device Read  ===========---"
+    Private Const BlockEndDeviceRead As String = "--------------- End Device Read  ---------------"
+
+    Private Const BlockBeginSystemWrite As String = "============== Begin System Write =============="
+    Private Const BlockEndSystemWrite As String = "===------------ End System Write ------------==="
+
+    Private Const BlockBeginSystemRead As String = "============== Begin System Read  =============="
+    Private Const BlockEndSystemRead As String = "===------------ End System Read  ------------==="
+
+    ''' <summary>Writes every register on one device, as one labelled block.</summary>
+    Public Sub WriteDevice(panel As DevicePanel)
+
+        If panel Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginDeviceWrite, BlockEndDeviceWrite, Sub() panel.WriteAllRegisters())
+
+    End Sub
+
+    ''' <summary>Reads every register on one device, as one labelled block.</summary>
+    Public Sub ReadDevice(panel As DevicePanel)
+
+        If panel Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginDeviceRead, BlockEndDeviceRead, Sub() panel.ReadAllRegisters())
+
+    End Sub
+
+    ''' <summary>
+    ''' Writes every register on every device on screen, as one labelled block.
+    ''' One block for the lot rather than a device block inside it for each: the
+    ''' user asked for the whole system, and that is what the label says.
+    ''' </summary>
+    Public Sub WriteSystem()
+
+        AsBlock(BlockBeginSystemWrite, BlockEndSystemWrite,
+                Sub()
+                    For Each panel As DevicePanel In AppCore.DevicePanels()
+                        panel.WriteAllRegisters()
+                    Next
+                End Sub)
+
+    End Sub
+
+    ''' <summary>Reads every register on every device on screen, as one block.</summary>
+    Public Sub ReadSystem()
+
+        AsBlock(BlockBeginSystemRead, BlockEndSystemRead,
+                Sub()
+                    For Each panel As DevicePanel In AppCore.DevicePanels()
+                        panel.ReadAllRegisters()
+                    Next
+                End Sub)
+
+    End Sub
+
+    ''' <summary>
+    ''' Runs an operation with a pair of block labels around it. Whether to mark it
+    ''' at all is decided once at the top: a block that opens has to close, whatever
+    ''' happens in between.
+    ''' </summary>
+    Private Sub AsBlock(beginLabel As String, endLabel As String, work As Action)
+
+        Dim marking As Boolean = AppCore.IsRecording
+
+        If marking Then EventLogAddBlock(beginLabel)
+
+        work()
+
+        If marking Then EventLogAddBlock(endLabel)
+
+    End Sub
+
+    ''' <summary>
+    ''' A register is to be written out - because it was just changed, because its
+    ''' device is being written, or because Write All is walking the workspace.
+    ''' Every write comes through here, whatever set it off.
+    ''' </summary>
+    Private Sub BitFieldWriteRequest(sender As Object, e As RoutedEventArgs)
+
+        Dim editor As BitFieldEditor = TryCast(sender, BitFieldEditor)
+        If editor Is Nothing Then Exit Sub
+
         Dim change As RegisterChange = Describe(editor)
 
+        WriteRegister(change.Hostaddress, change.Registeraddress, change.Value)
+
         If AppCore.IsRecording Then
-            AddLogentry(change.Hostaddress, change.Registeraddress, change.Value, CommentFor(change))
+            AddLogentry(change.Hostaddress, change.Registeraddress, change.Value,
+                        CommentFor(change, WriteLeadIn))
+        End If
+
+    End Sub
+
+    ''' <summary>
+    ''' A register has been asked for - by right-clicking its bits, or by anything
+    ''' in the program calling RequestRead on it.
+    '''
+    ''' Putting the answer straight into Value is deliberate: a value set in code
+    ''' does not raise ValueChanged, so reading a register back does not come out of
+    ''' the other end looking like the user had written to it.
+    ''' </summary>
+    Private Sub BitFieldReadRequest(sender As Object, e As RoutedEventArgs)
+
+        Dim editor As BitFieldEditor = TryCast(sender, BitFieldEditor)
+        If editor Is Nothing Then Exit Sub
+
+        Dim change As RegisterChange = Describe(editor)
+
+        editor.Value = ReadRegister(change.Hostaddress, change.Registeraddress)
+
+        ' Logged like a write, but the value column says "---" rather than what came
+        ' back. A replayed line is an instruction, not a recording: this one says
+        ' "read this register", and what it returns is for then, not for now.
+        If AppCore.IsRecording Then
+            AddLogentry(change.Hostaddress, change.Registeraddress, ReadPlaceholder,
+                        CommentFor(change, ReadLeadIn))
         End If
 
     End Sub
@@ -138,27 +296,38 @@ Public Module BusEvents
     Public Const ReadLeadIn As String = "<"
 
     ''' <summary>
-    ''' The line a write puts in the log's comment column:
+    ''' What stands in the value column for a read. A read carries no value out of
+    ''' here - it is a request - and anything in that column would read as data the
+    ''' user had put on the bus.
+    ''' </summary>
+    Public Const ReadPlaceholder As String = "---"
+
+    ''' <summary>
+    ''' The line a transaction puts in the log's comment column:
     '''
     '''     &gt; PCA9555 : Front_panel_I/O.Output
+    '''     &lt; PCA9555 : Front_panel_I/O.Input
     '''
     ''' Device, then the function it serves, then the register within it - the dot
-    ''' reading as "part of", the way a field of a structure would.
+    ''' reading as "part of", the way a field of a structure would. The lead-in says
+    ''' which way it went.
     ''' </summary>
-    Private Function CommentFor(change As RegisterChange) As String
+    Private Function CommentFor(change As RegisterChange, leadIn As String) As String
 
-        Return WriteLeadIn & " " & change.DeviceName & " : " &
+        Return leadIn & " " & change.DeviceName & " : " &
                Unspaced(change.FunctionName) & "." & Unspaced(change.Registername)
 
     End Function
 
     ''' <summary>
     ''' Spaces to underscores, so a name reads as one word in the log. Display only -
-    ''' the panel and the register keep the name the user typed.
+    ''' the panel and the register keep the name the user typed. The command window
+    ''' resolves names through the same routine, so anything the log prints can be
+    ''' typed straight back in.
     ''' </summary>
     Private Function Unspaced(text As String) As String
 
-        Return If(text, String.Empty).Replace(" "c, "_"c)
+        Return TextTools.Symbolic(text)
 
     End Function
 
@@ -168,17 +337,72 @@ Public Module BusEvents
     ' ========================================================================
 
     ''' <summary>
+    ''' Fetches one register from a device.
+    '''
+    ''' There is no bus yet, so it makes a number up. This is the one place that
+    ''' has to change when there is real hardware on the other end - everything
+    ''' that reads a register comes through here.
+    ''' </summary>
+    Public Function ReadRegister(hostAddress As Byte, registerAddress As Byte) As Byte
+
+        Return CByte(Random.Shared.Next(0, 256))
+
+    End Function
+
+    ''' <summary>
+    ''' Sends one register out to a device.
+    '''
+    ''' There is no bus yet, so nothing leaves the program - only the log line the
+    ''' caller writes says it happened. The other half of ReadRegister, and the
+    ''' other place the hardware plugs in.
+    ''' </summary>
+    Public Sub WriteRegister(hostAddress As Byte, registerAddress As Byte, value As Byte)
+
+        ' TODO: put the byte on the bus.
+
+    End Sub
+
+    ''' <summary>
+    ''' Puts a comment line on the end of the log - marker "/", nothing in the
+    ''' address columns, the text in the comment.
+    ''' </summary>
+    Public Sub EventLogAddComment(text As String)
+
+        EventLogCore.AppendEntry(EventLogMarkers.Comment,
+                                 String.Empty, String.Empty, String.Empty, text)
+
+    End Sub
+
+    ''' <summary>
+    ''' The same, as a block label - marker "L". Used in pairs to fence off a run of
+    ''' transactions that were asked for as one thing.
+    ''' </summary>
+    Public Sub EventLogAddBlock(text As String)
+
+        EventLogCore.AppendEntry(EventLogMarkers.Label,
+                                 String.Empty, String.Empty, String.Empty, text)
+
+    End Sub
+
+    ''' <summary>
     ''' Puts one transaction on the end of the event log. Addresses and values are
     ''' written in decimal whatever the display is set to, so a saved log always
     ''' reads back the same way.
     ''' </summary>
-    Public Sub AddLogentry(hostAddress As Byte, registerAddress As Byte, value As Byte, comment As String)
+    Public Sub AddLogentry(hostAddress As Byte, registerAddress As Byte, value As String, comment As String)
 
         EventLogCore.AppendEntry(String.Empty,
                                  hostAddress.ToString(CultureInfo.InvariantCulture),
                                  registerAddress.ToString(CultureInfo.InvariantCulture),
-                                 value.ToString(CultureInfo.InvariantCulture),
+                                 value,
                                  comment)
+
+    End Sub
+
+    ''' <summary>The same, for a transaction that really does carry a byte.</summary>
+    Public Sub AddLogentry(hostAddress As Byte, registerAddress As Byte, value As Byte, comment As String)
+
+        AddLogentry(hostAddress, registerAddress, value.ToString(CultureInfo.InvariantCulture), comment)
 
     End Sub
 

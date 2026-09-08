@@ -83,9 +83,11 @@
                                          Rows="1"
                                          Columns="8"/>
 
-                            <!-- The lock. A CheckBox whose box is replaced by an open
-                                 or closed padlock glyph: blue and regular when open,
-                                 red and bold when shut. -->
+                            <!-- The lock. A CheckBox whose box is replaced by an eye:
+                                 open and blue means this register is hidden when the
+                                 device is collapsed, crossed out and red means it
+                                 stays on show. The glyph says what the padlock has
+                                 always actually meant - what survives a collapse. -->
                             <CheckBox x:Name="PART_Lock"
                                       Grid.Column="3"
                                       Focusable="True"
@@ -101,19 +103,18 @@
                                                 Padding="4,0"
                                                 SnapsToDevicePixels="True">
                                             <TextBlock x:Name="txt_LockGlyph"
-                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontFamily="{DynamicResource Font_Glyph}"
                                                        FontSize="12"
-                                                       FontWeight="Normal"
+                                                       FontWeight="{DynamicResource Weight_Glyph}"
                                                        VerticalAlignment="Center"
-                                                       Foreground="{DynamicResource Brush_Lock_Open}"
-                                                       Text="&#xE785;"/>
+                                                       Foreground="{DynamicResource Brush_Register_Hidden}"
+                                                       Text="&#xF19E;"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="txt_LockGlyph" Property="Text" Value="&#xE72E;"/>
-                                                <Setter TargetName="txt_LockGlyph" Property="FontWeight" Value="Bold"/>
+                                                <Setter TargetName="txt_LockGlyph" Property="Text" Value="&#xF19F;"/>
                                                 <Setter TargetName="txt_LockGlyph" Property="Foreground"
-                                                        Value="{DynamicResource Brush_Lock_Shut}"/>
+                                                        Value="{DynamicResource Brush_Register_Shown}"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter TargetName="bdr_Lock" Property="Background"
@@ -175,8 +176,12 @@
                                      of the template's visual tree, so declaring it
                                      here would put it out of GetTemplateChild's
                                      reach. The Border is what carries the hit test
-                                     for the empty stretch of the header. -->
-                                <DockPanel LastChildFill="False">
+                                     for the empty stretch of the header.
+
+                                     LastChildFill is on so the grab bars, declared
+                                     last, take whatever room the named parts leave
+                                     between them. -->
+                                <DockPanel LastChildFill="True">
 
                                     <!-- Shared with the expand-all button on the main
                                          toolbar, so the two always look alike. -->
@@ -208,11 +213,32 @@
                                                 Orientation="Horizontal"
                                                 VerticalAlignment="Center"
                                                 Visibility="Collapsed">
-                                        <TextBlock Text="Target"
-                                                   FontSize="12"
+
+                                        <!-- The whole device, out and back. Same two
+                                             glyphs and colours the main toolbar uses
+                                             for every device, because this is the
+                                             same thing for one of them. -->
+                                        <Button x:Name="PART_WriteAll"
+                                                Style="{DynamicResource Style_Device_Action}"
+                                                Foreground="{DynamicResource Brush_Glyph_Accent}"
+                                                Content="&#xE8AB;"
+                                                ToolTip="Write every register on this device"/>
+
+                                        <Button x:Name="PART_ReadAll"
+                                                Style="{DynamicResource Style_Device_Action}"
+                                                Foreground="{DynamicResource Brush_Toolbar_Read}"
+                                                Content="&#xE895;"
+                                                ToolTip="Read every register on this device"/>
+
+                                        <TextBlock Text="&#xE950;"
+                                                   FontFamily="{DynamicResource Font_Glyph}"
+                                                   FontWeight="{DynamicResource Weight_Glyph}"
+                                                   FontSize="14"
                                                    VerticalAlignment="Center"
-                                                   Margin="0,0,6,0"
+                                                   Margin="6,0,6,0"
+                                                   ToolTip="Which strapped address this device answers on"
                                                    Foreground="{DynamicResource Brush_Header_Plain}"/>
+
                                         <ComboBox x:Name="PART_Target"
                                                   FontSize="12"
                                                   MinWidth="62"
@@ -253,6 +279,32 @@
                                             </Style>
                                         </TextBox.Style>
                                     </TextBox>
+
+                                    <!-- The blank stretch of header, marked as
+                                         something to take hold of. Declared last so
+                                         it fills what is left: it starts 20 pixels
+                                         past the function name and stops 20 short of
+                                         the Target label, and shrinks to nothing
+                                         rather than pushing either of them about.
+
+                                         Transparent rather than unpainted, so the
+                                         gaps between the bars still hit test - the
+                                         whole strip is the grab zone, not the bars. -->
+                                    <Border x:Name="PART_Grab"
+                                            Background="Transparent"
+                                            Margin="20,0,20,0">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <Border Height="2" Margin="0,0,0,3"
+                                                    Background="{DynamicResource Brush_Device_Grab}"
+                                                    SnapsToDevicePixels="True"/>
+                                            <Border Height="2" Margin="0,0,0,3"
+                                                    Background="{DynamicResource Brush_Device_Grab}"
+                                                    SnapsToDevicePixels="True"/>
+                                            <Border Height="2"
+                                                    Background="{DynamicResource Brush_Device_Grab}"
+                                                    SnapsToDevicePixels="True"/>
+                                        </StackPanel>
+                                    </Border>
 
                                 </DockPanel>
                             </Border>

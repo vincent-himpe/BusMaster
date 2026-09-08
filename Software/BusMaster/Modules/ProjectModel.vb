@@ -23,6 +23,13 @@ End Class
 ''' <summary>One device panel: what it is called, and which part it holds.</summary>
 Public Class ProjectDeviceData
 
+    ''' <summary>
+    ''' The panel's identity. Written here so a saved view in the companion
+    ''' ".Workspace" file can find this panel again whatever has been done to it
+    ''' since. Blank in projects written before views existed - one is made on load.
+    ''' </summary>
+    Public Property PanelId As String = String.Empty
+
     Public Property FunctionName As String = String.Empty
 
     ''' <summary>Device name without path or extension - "PCA9555".</summary>

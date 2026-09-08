@@ -41,15 +41,38 @@ Public Module BusActions
     End Sub
 
     ''' <summary>
-    ''' Toolbar / Write All - push every register of every device on screen out to
-    ''' the hardware in one go, whatever the Operation setting says about when
-    ''' individual changes are written.
+    ''' Toolbar / Write All - push every register of every device on screen out in
+    ''' one go, whatever the Operation setting says about when individual changes
+    ''' are written. That setting decides how much follows a change; this is asked
+    ''' for outright.
     ''' </summary>
     Public Sub WriteAll()
 
-        ' TODO: walk the device panels and write each register map to the bus.
-        AppCore.ReportNotImplemented("Write All")
+        BusEvents.WriteSystem()
+
+        AppCore.SetStatus("Wrote every register on " & Describe(AppCore.DevicePanels().Count))
 
     End Sub
+
+    ''' <summary>
+    ''' Toolbar / Read All - fetch every register of every device on screen. The
+    ''' whole-workspace version of Ctrl+right-clicking one device.
+    ''' </summary>
+    Public Sub ReadAll()
+
+        BusEvents.ReadSystem()
+
+        AppCore.SetStatus("Read every register on " & Describe(AppCore.DevicePanels().Count))
+
+    End Sub
+
+    ''' <summary>"3 devices", or "1 device" - the status bar should read properly.</summary>
+    Private Function Describe(count As Integer) As String
+
+        If count = 1 Then Return "1 device"
+
+        Return count.ToString(Globalization.CultureInfo.InvariantCulture) & " devices"
+
+    End Function
 
 End Module

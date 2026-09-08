@@ -252,6 +252,91 @@ Public Class BitFieldEditor
 
     End Sub
 
+    ''' <summary>
+    ''' Raised when the byte should be fetched from wherever it really lives and put
+    ''' back in here. The control does not read anything itself - it does not know
+    ''' what is on the other end - so it asks and waits to be filled in.
+    ''' </summary>
+    Public Shared ReadOnly ReadRequestedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("ReadRequested", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(BitFieldEditor))
+
+    Public Custom Event ReadRequested As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(ReadRequestedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(ReadRequestedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
+    ''' <summary>
+    ''' Asks for this byte to be read back. Exactly what a right-click on the bits
+    ''' does, so anything driving a read from elsewhere in the program travels the
+    ''' same path and gets the same treatment.
+    ''' </summary>
+    Public Sub RequestRead()
+
+        MyBase.RaiseEvent(New RoutedEventArgs(ReadRequestedEvent, Me))
+
+    End Sub
+
+    ''' <summary>
+    ''' Raised when this byte should be put out to wherever the register really
+    ''' lives. The mirror of ReadRequested: the control holds the value, something
+    ''' else knows how to send it.
+    ''' </summary>
+    Public Shared ReadOnly WriteRequestedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("WriteRequested", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(BitFieldEditor))
+
+    Public Custom Event WriteRequested As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(WriteRequestedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(WriteRequestedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
+    ''' <summary>
+    ''' Asks for this byte to be written out. What a change to the value does in
+    ''' "Register On Change", and what Write All does to every register there is -
+    ''' one path, however it was set off.
+    ''' </summary>
+    Public Sub RequestWrite()
+
+        MyBase.RaiseEvent(New RoutedEventArgs(WriteRequestedEvent, Me))
+
+    End Sub
+
+    ''' <summary>
+    ''' Raised by a Ctrl+right-click: read the whole device, not just this one
+    ''' register. A conversation with the DevicePanel above and nobody else - it
+    ''' handles this and stops it going any further.
+    ''' </summary>
+    Public Shared ReadOnly ReadAllRequestedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("ReadAllRequested", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(BitFieldEditor))
+
+    Public Custom Event ReadAllRequested As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(ReadAllRequestedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(ReadAllRequestedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
 
     ' ========================================================================
     '  Construction and templating
@@ -333,6 +418,7 @@ Public Class BitFieldEditor
             region.SetResourceReference(Border.BorderBrushProperty, "Brush_Chrome_Border")
 
             AddHandler region.MouseLeftButtonDown, AddressOf Region_MouseLeftButtonDown
+            AddHandler region.MouseRightButtonUp, AddressOf Region_MouseRightButtonUp
 
             Regions(index) = region
             RegionLabels(index) = label
@@ -400,6 +486,27 @@ Public Class BitFieldEditor
         If region Is Nothing Then Exit Sub
 
         ToggleRegion(CInt(region.Tag))
+        e.Handled = True
+
+    End Sub
+
+    ''' <summary>
+    ''' A right-click anywhere across the eight regions asks for the byte to be read
+    ''' back; holding Ctrl asks for the whole device instead. Only the regions do
+    ''' this - the name, the value box and the padlock are not the byte.
+    '''
+    ''' A modifier rather than a double-click, so neither gesture is a prefix of the
+    ''' other: the plain read happens the instant the button comes up, and reading a
+    ''' device never begins by reading one register out of turn.
+    ''' </summary>
+    Private Sub Region_MouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
+
+        If (Keyboard.Modifiers And ModifierKeys.Control) = ModifierKeys.Control Then
+            MyBase.RaiseEvent(New RoutedEventArgs(ReadAllRequestedEvent, Me))
+        Else
+            RequestRead()
+        End If
+
         e.Handled = True
 
     End Sub
@@ -647,6 +754,41 @@ Public Class BitFieldEditor
         Next
 
     End Sub
+
+    ''' <summary>
+    ''' The region captions, most significant bit first - so index 0 is bit 7. Empty
+    ''' entries are the bits that were never named.
+    ''' </summary>
+    Public Function BitNames() As String()
+
+        Return SplitFieldnames()
+
+    End Function
+
+    ''' <summary>
+    ''' The bit a caption belongs to, 7 down to 0, or -1 if this register has no bit
+    ''' by that name. Case is ignored and a space reads as an underscore, so a name
+    ''' can be typed exactly as the log prints it.
+    ''' </summary>
+    Public Function BitNumberFor(name As String) As Integer
+
+        Dim wanted As String = TextTools.Symbolic(name)
+        If wanted.Length = 0 Then Return -1
+
+        Dim names() As String = SplitFieldnames()
+
+        For index As Integer = 0 To Math.Min(names.Length, BitCount) - 1
+
+            If String.Equals(TextTools.Symbolic(names(index)), wanted,
+                             StringComparison.OrdinalIgnoreCase) Then
+                Return (BitCount - 1) - index
+            End If
+
+        Next
+
+        Return -1
+
+    End Function
 
     ''' <summary>Splits Fieldnames on commas, trimming the space around each entry.</summary>
     Private Function SplitFieldnames() As String()

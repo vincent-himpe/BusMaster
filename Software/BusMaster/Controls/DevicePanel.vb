@@ -85,6 +85,27 @@ Public Class DevicePanel
         End RaiseEvent
     End Event
 
+    ''' <summary>
+    ''' The user has taken hold of the grab bars and started to move the panel. Like
+    ''' Clone and Delete, the panel only says what was asked for: it does not own the
+    ''' stack it sits in, so the workspace runs the drag from here on.
+    ''' </summary>
+    Public Shared ReadOnly ReorderStartedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("ReorderStarted", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(DevicePanel))
+
+    Public Custom Event ReorderStarted As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(ReorderStartedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(ReorderStartedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
     Public Shared ReadOnly DeleteRequestedEvent As RoutedEvent =
         EventManager.RegisterRoutedEvent("DeleteRequested", RoutingStrategy.Bubble,
                                          GetType(RoutedEventHandler), GetType(DevicePanel))
@@ -100,6 +121,17 @@ Public Class DevicePanel
             MyBase.RaiseEvent(e)
         End RaiseEvent
     End Event
+
+    ''' <summary>
+    ''' Identity that outlives being moved, renamed, collapsed or reloaded. Made the
+    ''' moment the panel exists, written into the project file, and replaced by the
+    ''' stored one when a project is opened. Saved views use it to find their way
+    ''' back to the right panel.
+    '''
+    ''' A plain property rather than a dependency property: nothing binds to it and
+    ''' nothing draws it, so it would gain nothing from being one.
+    ''' </summary>
+    Public Property PanelId As String = String.Empty
 
     ''' <summary>
     ''' The file this panel was loaded from, or an empty string. Cloning reads it to
@@ -253,6 +285,85 @@ Public Class DevicePanel
                                                  New FrameworkPropertyMetadata(GetType(DevicePanel)))
     End Sub
 
+    Public Sub New()
+
+        ' Every panel has an identity from the moment it exists, however it came to
+        ' - the toolbar, a clone, or straight out of the XAML. Opening a project
+        ' puts the stored one back in its place.
+        PanelId = Guid.NewGuid().ToString()
+
+        ' Read-the-whole-device is settled between this panel and its own registers.
+        ' It bubbles up from whichever one was double-clicked, is dealt with here,
+        ' and goes no further.
+        Me.AddHandler(BitFieldEditor.ReadAllRequestedEvent,
+                      New RoutedEventHandler(AddressOf Registers_ReadAllRequested))
+
+    End Sub
+
+    ' ========================================================================
+    '  Whole-device buttons on the header
+    '
+    '  The same two operations Ctrl+right-click already offers, put where they
+    '  can be found. Both go through BusEvents so the log gets its block labels
+    '  and every register still travels the single-read and single-write path.
+    ' ========================================================================
+
+    Private WriteAllButton As Button
+    Private ReadAllButton As Button
+
+    Private Sub WriteAll_Click(sender As Object, e As RoutedEventArgs)
+
+        BusEvents.WriteDevice(Me)
+
+    End Sub
+
+    Private Sub ReadAll_Click(sender As Object, e As RoutedEventArgs)
+
+        BusEvents.ReadDevice(Me)
+
+    End Sub
+
+    ''' <summary>
+    ''' A Ctrl+right-click on any register asks for the whole device.
+    '''
+    ''' Handed to BusEvents rather than done here, so the log gets its block labels
+    ''' around it. The panel knows how to read its registers; it does not know, and
+    ''' should not know, that there is a log at all.
+    ''' </summary>
+    Private Sub Registers_ReadAllRequested(sender As Object, e As RoutedEventArgs)
+
+        BusEvents.ReadDevice(Me)
+        e.Handled = True
+
+    End Sub
+
+    ''' <summary>
+    ''' Reads every register in this panel, one after another, in the order the
+    ''' device file lists them. Each goes out through its own RequestRead, so a
+    ''' whole-device read is nothing more than the single reads it is made of.
+    ''' </summary>
+    Public Sub ReadAllRegisters()
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            editor.RequestRead()
+        Next
+
+    End Sub
+
+    ''' <summary>
+    ''' Writes every register in this panel, in the same order and by the same rule:
+    ''' a whole-device write is the single writes it is made of. This is what
+    ''' "Device On Change" does after any one register is touched, and what Write
+    ''' All does to every panel in turn.
+    ''' </summary>
+    Public Sub WriteAllRegisters()
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            editor.RequestWrite()
+        Next
+
+    End Sub
+
     Public Overrides Sub OnApplyTemplate()
 
         MyBase.OnApplyTemplate()
@@ -281,6 +392,42 @@ Public Class DevicePanel
 
         If TargetBox IsNot Nothing Then
             AddHandler TargetBox.SelectionChanged, AddressOf TargetBox_SelectionChanged
+        End If
+
+        If GrabZone IsNot Nothing Then
+            RemoveHandler GrabZone.PreviewMouseLeftButtonDown, AddressOf Grab_PreviewMouseLeftButtonDown
+            RemoveHandler GrabZone.PreviewMouseLeftButtonUp, AddressOf Grab_PreviewMouseLeftButtonUp
+            RemoveHandler GrabZone.PreviewMouseMove, AddressOf Grab_PreviewMouseMove
+            RemoveHandler GrabZone.LostMouseCapture, AddressOf Grab_LostMouseCapture
+        End If
+
+        GrabZone = TryCast(GetTemplateChild("PART_Grab"), FrameworkElement)
+
+        If GrabZone IsNot Nothing Then
+            AddHandler GrabZone.PreviewMouseLeftButtonDown, AddressOf Grab_PreviewMouseLeftButtonDown
+            AddHandler GrabZone.PreviewMouseLeftButtonUp, AddressOf Grab_PreviewMouseLeftButtonUp
+            AddHandler GrabZone.PreviewMouseMove, AddressOf Grab_PreviewMouseMove
+            AddHandler GrabZone.LostMouseCapture, AddressOf Grab_LostMouseCapture
+        End If
+
+        If WriteAllButton IsNot Nothing Then
+            RemoveHandler WriteAllButton.Click, AddressOf WriteAll_Click
+        End If
+
+        WriteAllButton = TryCast(GetTemplateChild("PART_WriteAll"), Button)
+
+        If WriteAllButton IsNot Nothing Then
+            AddHandler WriteAllButton.Click, AddressOf WriteAll_Click
+        End If
+
+        If ReadAllButton IsNot Nothing Then
+            RemoveHandler ReadAllButton.Click, AddressOf ReadAll_Click
+        End If
+
+        ReadAllButton = TryCast(GetTemplateChild("PART_ReadAll"), Button)
+
+        If ReadAllButton IsNot Nothing Then
+            AddHandler ReadAllButton.Click, AddressOf ReadAll_Click
         End If
 
         WireHeaderMenu()
@@ -315,6 +462,72 @@ Public Class DevicePanel
         menu.Items.Add(mnu_Panel_Delete)
 
         header.ContextMenu = menu
+
+    End Sub
+
+    ' ========================================================================
+    '  The grab bars
+    '
+    '  Pressing them arms a drag; the drag itself only starts once the pointer has
+    '  moved far enough to mean it, so a click that lands here - to dismiss an edit
+    '  in the name box, say - still behaves like a click.
+    ' ========================================================================
+
+    Private GrabZone As FrameworkElement
+    Private GrabOrigin As Point
+    Private GrabArmed As Boolean = False
+
+    Private Sub Grab_PreviewMouseLeftButtonDown(sender As Object, e As MouseButtonEventArgs)
+
+        GrabOrigin = e.GetPosition(Me)
+        GrabArmed = True
+
+        ' Held from the moment the button goes down. Moving far enough to mean a
+        ' drag also means leaving the bars, and without the capture the move events
+        ' would stop arriving the instant the pointer crossed off them.
+        GrabZone.CaptureMouse()
+
+    End Sub
+
+    Private Sub Grab_PreviewMouseLeftButtonUp(sender As Object, e As MouseButtonEventArgs)
+
+        ReleaseGrab()
+
+    End Sub
+
+    Private Sub Grab_LostMouseCapture(sender As Object, e As MouseEventArgs)
+
+        GrabArmed = False
+
+    End Sub
+
+    Private Sub Grab_PreviewMouseMove(sender As Object, e As MouseEventArgs)
+
+        If Not GrabArmed Then Exit Sub
+
+        If e.LeftButton <> MouseButtonState.Pressed Then
+            ReleaseGrab()
+            Exit Sub
+        End If
+
+        Dim moved As Vector = e.GetPosition(Me) - GrabOrigin
+
+        If Math.Abs(moved.X) < SystemParameters.MinimumHorizontalDragDistance AndAlso
+           Math.Abs(moved.Y) < SystemParameters.MinimumVerticalDragDistance Then Exit Sub
+
+        ' Handed over. The capture goes back first, because the workspace takes one
+        ' of its own the moment it hears about this.
+        ReleaseGrab()
+
+        MyBase.RaiseEvent(New RoutedEventArgs(ReorderStartedEvent, Me))
+
+    End Sub
+
+    Private Sub ReleaseGrab()
+
+        GrabArmed = False
+
+        If GrabZone IsNot Nothing AndAlso GrabZone.IsMouseCaptured Then GrabZone.ReleaseMouseCapture()
 
     End Sub
 
@@ -537,6 +750,58 @@ Public Class DevicePanel
         Return RegisterValues(CInt(register))
 
     End Function
+
+    ''' <summary>
+    ''' The register editors this panel built, in the order the device file lists
+    ''' them. A copy, so a caller walking them cannot disturb the panel's own list.
+    ''' </summary>
+    Public Function Registers() As List(Of BitFieldEditor)
+
+        Return New List(Of BitFieldEditor)(RegisterEditors)
+
+    End Function
+
+    ''' <summary>
+    ''' Addresses of the registers whose padlock is shut. This is what a saved view
+    ''' records - the padlock is what decides which registers survive a collapse.
+    ''' </summary>
+    Public Function GetLockedRegisters() As List(Of Integer)
+
+        Dim locked As New List(Of Integer)
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            If editor.IsLocked Then locked.Add(CInt(editor.Registeraddress))
+        Next
+
+        Return locked
+
+    End Function
+
+    ''' <summary>
+    ''' Shuts the padlock on the listed registers and opens every other one, so a
+    ''' view restores what was saved rather than adding to whatever is set now.
+    ''' Addresses this device does not have are ignored, which is what lets a view
+    ''' survive the device file changing underneath it.
+    ''' </summary>
+    Public Sub SetLockedRegisters(locked As IEnumerable(Of Integer))
+
+        Dim wanted As New HashSet(Of Integer)
+
+        If locked IsNot Nothing Then
+            For Each address As Integer In locked
+                wanted.Add(address)
+            Next
+        End If
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            editor.IsLocked = wanted.Contains(CInt(editor.Registeraddress))
+        Next
+
+        ' A collapsed panel is showing the locked registers right now, so what it
+        ' shows has just changed.
+        ApplyDisclosure()
+
+    End Sub
 
     ''' <summary>
     ''' Reads a .DEV file and builds the panel from it: the header takes the device's

@@ -26,13 +26,6 @@ Public Module DeviceActions
 
     End Sub
 
-    ''' <summary>Device / Remove Device - take the selected device out of the project.</summary>
-    Public Sub RemoveDevice()
-
-        ' TODO: remove the selected device, then AppCore.MarkModified().
-        AppCore.ReportNotImplemented("Remove Device")
-
-    End Sub
 
     ''' <summary>Tools / Create Device - a blank Device Editor.</summary>
     Public Sub CreateDevice()

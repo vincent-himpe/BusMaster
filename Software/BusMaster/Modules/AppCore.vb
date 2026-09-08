@@ -99,6 +99,7 @@ Public Module AppCore
         UpdateActiveProject()
 
         RefreshValueDisplayControls()
+        RefreshProbePorts()
 
         ' One handler for every register on screen, now and later. Attached before
         ' any device is loaded so nothing can slip past it.
@@ -107,6 +108,8 @@ Public Module AppCore
         ' Built now but kept out of sight, so the log is already collecting whenever
         ' the user asks for it.
         CreateEventLogWindow()
+        CreateCommandWindow()
+        CreateTerminalWindow()
 
         ' Pick up where the user left off.
         If Not LoadMostRecentProject() Then
@@ -114,6 +117,10 @@ Public Module AppCore
             ' TEMPORARY - see DemoDeviceName. A missing file just raises LoadFailed and
             ' writes to the status bar, so this cannot stop the program starting.
             Shell.dvp_Device.LoadDevice(DemoDeviceName)
+
+            ' Opening a project does this itself; starting without one still needs
+            ' the views list to exist and be empty.
+            WorkspaceCore.Reload()
 
         End If
 
@@ -166,6 +173,34 @@ Public Module AppCore
 
     End Sub
 
+    ''' <summary>The Command window - made once and hidden, exactly like the log.</summary>
+    Private CommandsWindow As CommandWindow
+
+    Private Sub CreateCommandWindow()
+
+        If CommandsWindow IsNot Nothing Then Exit Sub
+
+        CommandsWindow = New CommandWindow With {.Owner = Shell}
+
+        CommandsWindow.Show()
+        CommandsWindow.Hide()
+
+    End Sub
+
+    ''' <summary>The Terminal window, on the same terms as the other two.</summary>
+    Private TerminalsWindow As TerminalWindow
+
+    Private Sub CreateTerminalWindow()
+
+        If TerminalsWindow IsNot Nothing Then Exit Sub
+
+        TerminalsWindow = New TerminalWindow With {.Owner = Shell}
+
+        TerminalsWindow.Show()
+        TerminalsWindow.Hide()
+
+    End Sub
+
     ''' <summary>
     ''' The project name as it should appear in a file name - no path, no extension,
     ''' and never blank.
@@ -213,6 +248,10 @@ Public Module AppCore
 
         StoreWindowGeometry()
 
+        ' A serial port left open outlives the window that used it, and the next
+        ' run would find it in use.
+        ProbeControl.Disconnect()
+
     End Sub
 
 
@@ -245,6 +284,8 @@ Public Module AppCore
         IsModified = False
 
         UpdateActiveProject()
+        WorkspaceCore.Reload()
+
         SetStatus("New project created - not saved yet")
 
     End Sub
@@ -505,6 +546,26 @@ Public Module AppCore
     End Sub
 
     ''' <summary>
+    ''' The device panels on screen, top to bottom. One place that knows how the
+    ''' workspace is put together, for anything that has to visit them all.
+    ''' </summary>
+    Public Function DevicePanels() As List(Of DevicePanel)
+
+        Dim panels As New List(Of DevicePanel)
+        If Shell Is Nothing Then Return panels
+
+        For Each child As UIElement In Shell.stk_Devices.Children
+
+            Dim panel As DevicePanel = TryCast(child, DevicePanel)
+            If panel IsNot Nothing Then panels.Add(panel)
+
+        Next
+
+        Return panels
+
+    End Function
+
+    ''' <summary>
     ''' Puts another device on screen, below the ones already there, and brings it
     ''' into line with the radix currently in force.
     ''' </summary>
@@ -672,6 +733,154 @@ Public Module AppCore
 
 
     ' ========================================================================
+    '  The probe
+    '
+    '  The port list and the connect toggle. The toggle shows whether the link is
+    '  actually up, not what was last asked for, so a port that refuses to open
+    '  puts it back where it was.
+    ' ========================================================================
+
+    ''' <summary>Guards the port list while it is being refilled.</summary>
+    Private RefillingProbeList As Boolean = False
+
+    ''' <summary>
+    ''' Fills the port list from what the machine has now, and marks the one the
+    ''' settings name. The blank first entry is "no probe", which is what leaves the
+    ''' Terminal turning lines round on its own.
+    ''' </summary>
+    Public Sub RefreshProbePorts()
+
+        FillProbeList(ProbeControl.AvailablePorts())
+
+    End Sub
+
+    ''' <summary>
+    ''' Toolbar / Probe / rescan. Asks the USB bus which serial ports belong to a
+    ''' BusMaster probe and offers those. With none found the list falls back to
+    ''' every serial port, so a probe that does not announce itself properly can
+    ''' still be reached by hand.
+    ''' </summary>
+    Public Sub RescanProbes()
+
+        Dim probes As List(Of ProbePort) = ProbeControl.FindProbePorts()
+
+        If probes.Count > 0 Then
+
+            FillProbeList(probes)
+            SetStatus(Describe(probes.Count) & " found on " &
+                      String.Join(", ", probes.Select(Function(p) p.PortName)))
+
+        Else
+
+            FillProbeList(ProbeControl.AvailablePorts())
+            SetStatus("No BusMaster probe found - listing every serial port")
+
+        End If
+
+    End Sub
+
+    ''' <summary>"1 probe" or "3 probes" - the status bar should read properly.</summary>
+    Private Function Describe(count As Integer) As String
+
+        If count = 1 Then Return "1 probe"
+
+        Return count.ToString(CultureInfo.InvariantCulture) & " probes"
+
+    End Function
+
+    Private Sub FillProbeList(ports As IEnumerable(Of ProbePort))
+
+        If Shell Is Nothing Then Exit Sub
+
+        Dim list As ComboBox = Shell.tlbr_Probe_List
+
+        RefillingProbeList = True
+
+        list.Items.Clear()
+
+        ' The blank first entry is "no probe", which is what leaves the Terminal
+        ' turning lines round on its own.
+        list.Items.Add(New ProbePort(String.Empty, String.Empty))
+
+        For Each port As ProbePort In ports
+            list.Items.Add(port)
+        Next
+
+        Dim wanted As String = If(AppSettings.Current.ProbePort, String.Empty).Trim()
+
+        ' A port named in the settings but not plugged in still belongs on the list,
+        ' or choosing it again would be impossible once it came back.
+        If wanted.Length > 0 AndAlso Not ports.Any(Function(p) Same(p.PortName, wanted)) Then
+            list.Items.Add(New ProbePort(wanted, String.Empty))
+        End If
+
+        list.SelectedItem = list.Items.OfType(Of ProbePort)().
+                                 FirstOrDefault(Function(p) Same(p.PortName, wanted))
+
+        RefillingProbeList = False
+
+    End Sub
+
+    Private Function Same(left As String, right As String) As Boolean
+
+        Return String.Equals(left, right, StringComparison.OrdinalIgnoreCase)
+
+    End Function
+
+    ''' <summary>The user picked a port from the list.</summary>
+    Public Sub ProbePortChosen(chosen As Object)
+
+        If RefillingProbeList Then Exit Sub
+
+        Dim port As ProbePort = TryCast(chosen, ProbePort)
+
+        ProbeControl.ChoosePort(If(port Is Nothing, String.Empty, port.PortName))
+        RefreshProbeConnection()
+
+    End Sub
+
+    ''' <summary>The connect toggle was pressed one way or the other.</summary>
+    Public Sub ProbeConnectionRequested(connect As Boolean)
+
+        If RefillingProbeList Then Exit Sub
+
+        If connect Then
+            ProbeControl.Connect()
+        Else
+            ProbeControl.Disconnect()
+            SetStatus("Probe disconnected")
+        End If
+
+        RefreshProbeConnection()
+
+    End Sub
+
+    ''' <summary>
+    ''' Puts the toggle where the link actually is. Called after anything that could
+    ''' have changed it, so a failed connection does not leave the button claiming
+    ''' otherwise.
+    ''' </summary>
+    Public Sub RefreshProbeConnection()
+
+        If Shell Is Nothing Then Exit Sub
+
+        Dim live As Boolean = ProbeControl.IsConnected
+
+        ' Which port the probe is on cannot be changed out from under an open one,
+        ' and there is no point offering to look for another while it is.
+        Shell.tlbr_Probe_List.IsEnabled = Not live
+        Shell.tlbr_Probe_Rescan.IsEnabled = Not live
+
+        If Shell.tlbr_Probe_Connect.IsChecked.GetValueOrDefault() = live Then Exit Sub
+
+        RefillingProbeList = True
+        Shell.tlbr_Probe_Connect.IsChecked = live
+        RefillingProbeList = False
+
+    End Sub
+
+
+    ' ========================================================================
     '  Recording
     '
     '  Whether what happens on screen is written to the event log. The toolbar
@@ -700,38 +909,50 @@ Public Module AppCore
     End Sub
 
 
-    ' ========================================================================
-    '  Workspace
-    ' ========================================================================
-
-    ''' <summary>Toolbar / Workspace / Save.</summary>
-    Public Sub SaveWorkspace()
-
-        ' TODO: write the devices on screen, their targets and function names, to a
-        '       named workspace file, and add it to tlbr_Workspace_List.
-        ReportNotImplemented("Save Workspace")
-
-    End Sub
-
-    ''' <summary>Toolbar / Workspace / Delete.</summary>
-    Public Sub DeleteWorkspace()
-
-        ' TODO: remove the workspace picked in tlbr_Workspace_List.
-        ReportNotImplemented("Delete Workspace")
-
-    End Sub
-
-    ''' <summary>Shows the help box.</summary>
+    ''' <summary>
+    ''' Shows the help box.
+    '''
+    ''' The mouse section is the part that earns its keep: a keyboard shortcut is
+    ''' written on the menu beside its command, but nothing on screen says that a
+    ''' right-click reads a register. Anything that cannot be found by looking at
+    ''' the window belongs here.
+    ''' </summary>
     Public Sub ShowHelp()
 
+        ' Written as sentences rather than in columns: a message box uses whatever
+        ' font the system gives it, and padded columns come out ragged in every
+        ' proportional one.
         Dim text As String =
             AppTitle & " - I2C bus mastering controller" & vbCrLf & vbCrLf &
-            "File menu" & vbCrLf &
-            "   Ctrl+N          New Project" & vbCrLf &
-            "   Ctrl+O          Open Project" & vbCrLf &
-            "   Ctrl+S          Save Project" & vbCrLf &
-            "   Ctrl+Shift+S    Save Project As" & vbCrLf &
-            "   F1              This help" & vbCrLf & vbCrLf &
+            "Keyboard" & vbCrLf &
+            "   Ctrl+N - New Project" & vbCrLf &
+            "   Ctrl+O - Open Project" & vbCrLf &
+            "   Ctrl+S - Save Project" & vbCrLf &
+            "   Ctrl+Shift+S - Save Project As" & vbCrLf &
+            "   F1 - this help" & vbCrLf & vbCrLf &
+            "Registers" & vbCrLf &
+            "   Left-click a bit - toggle it, and write it out" & vbCrLf &
+            "   Right-click the bits - read that register" & vbCrLf &
+            "   Ctrl+right-click the bits - read every register on the device" & vbCrLf &
+            "   Padlock - keep the register on show when the device is closed" & vbCrLf & vbCrLf &
+            "Toolbar" & vbCrLf &
+            "   Operation - whether a change writes just that register, or the" & vbCrLf &
+            "      whole device it belongs to" & vbCrLf &
+            "   Write All - write every register on every device" & vbCrLf &
+            "   Read All - read every register on every device" & vbCrLf & vbCrLf &
+            "Device header" & vbCrLf &
+            "   Click the name - rename it" & vbCrLf &
+            "   Drag the bars - move the device up or down the stack" & vbCrLf &
+            "   Right-click - clone or delete the device" & vbCrLf &
+            "   Triangle - open or close the device" & vbCrLf & vbCrLf &
+            "Workspace views" & vbCrLf &
+            "   Save - save the padlocks as a new view" & vbCrLf &
+            "   Right-click Save - update the view showing in the list" & vbCrLf &
+            "   Delete - throw that view away" & vbCrLf & vbCrLf &
+            "Event log" & vbCrLf &
+            "   Record - log every register the user changes" & vbCrLf &
+            "   Double-click a line number - set or clear a breakpoint" & vbCrLf &
+            "   L S P D / - marker, typed in the second column" & vbCrLf & vbCrLf &
             "Settings, options and the recent project list are kept in:" & vbCrLf &
             AppSettings.SettingsFilePath
 
@@ -839,6 +1060,8 @@ Public Module AppCore
 
             RefreshRecentMenu()
             UpdateActiveProject()
+            WorkspaceCore.Reload()
+
             SetStatus("Opened " & Path.GetFileName(CurrentProjectPath) &
                       " (" & CurrentProject.Devices.Count.ToString(CultureInfo.InvariantCulture) & " devices)")
 
@@ -888,6 +1111,11 @@ Public Module AppCore
             End If
 
             UpdateActiveProject()
+
+            ' Views are named after the project file, so a first save or a Save As
+            ' changes which set of them belongs to what is on screen.
+            WorkspaceCore.Reload()
+
             SetStatus("Saved " & Path.GetFileName(fullPath) &
                       " (" & CurrentProject.Devices.Count.ToString(CultureInfo.InvariantCulture) & " devices)")
             Return True
@@ -917,6 +1145,7 @@ Public Module AppCore
             If panel Is Nothing Then Continue For
 
             devices.Add(New ProjectDeviceData With {
+                .PanelId = If(panel.PanelId, String.Empty),
                 .FunctionName = If(panel.FunctionName, String.Empty),
                 .DeviceFile = Path.GetFileNameWithoutExtension(If(panel.DeviceFile, String.Empty))
             })
@@ -937,6 +1166,9 @@ Public Module AppCore
 
         Shell.stk_Devices.Children.Clear()
 
+        ' Set if any panel had to be given an identity the file did not carry.
+        Dim invented As Boolean = False
+
         If data.Devices IsNot Nothing Then
 
             For Each device As ProjectDeviceData In data.Devices
@@ -945,6 +1177,19 @@ Public Module AppCore
 
                 Dim panel As DevicePanel = NewDevicePanel()
                 Shell.stk_Devices.Children.Add(panel)
+
+                If String.IsNullOrWhiteSpace(device.PanelId) Then
+
+                    ' A project written before panels had identities. The one the
+                    ' panel made for itself goes back into the project, because a
+                    ' view saved this session would not find its way home next time
+                    ' unless the file learns it.
+                    device.PanelId = panel.PanelId
+                    invented = True
+
+                Else
+                    panel.PanelId = device.PanelId
+                End If
 
                 panel.LoadDevice(If(device.DeviceFile, String.Empty))
                 panel.FunctionName = If(device.FunctionName, String.Empty)
@@ -955,6 +1200,11 @@ Public Module AppCore
 
         Shell.UpdateLayout()
         ApplyValueDisplay()
+
+        ' The project in hand now says something the file does not. Marking it so is
+        ' honest, and it is what gets those identities written down - a one-off, the
+        ' first time an older project is opened.
+        If invented Then MarkModified()
 
     End Sub
 

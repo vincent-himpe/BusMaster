@@ -35,4 +35,18 @@ Public Module TextTools
 
     End Function
 
+    ''' <summary>
+    ''' A name as it is written where a space would not do: trimmed, with spaces
+    ''' turned into underscores. "Front panel I/O" becomes "Front_panel_I/O".
+    '''
+    ''' The one definition of what a device or register is called outside its own
+    ''' label - the event log writes it this way, and the command window reads it
+    ''' back the same way, so what is logged can be typed.
+    ''' </summary>
+    Public Function Symbolic(text As String) As String
+
+        Return If(text, String.Empty).Trim().Replace(" "c, "_"c)
+
+    End Function
+
 End Module

@@ -537,12 +537,14 @@ Public Module EventLogCore
     ''' </summary>
     Public Sub SaveLogAs()
 
-        Dim entered As String = Interaction.InputBox(
+        Dim answer As String = StringPrompt.Ask(
+            Log, WindowTitle,
             "Name for this log:" & vbCrLf & vbCrLf &
-            "It will be saved as " & AppCore.ProjectNameForFiles() & "-<name>" & LogExtension,
-            WindowTitle, String.Empty)
+            "It will be saved as " & AppCore.ProjectNameForFiles() & "-<name>" & LogExtension)
 
-        entered = entered.Trim()
+        If answer Is Nothing Then Exit Sub
+
+        Dim entered As String = answer.Trim()
         If entered.Length = 0 Then Exit Sub
 
         If entered.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 Then

@@ -25,6 +25,17 @@ Public Class SettingsData
     Public Property MaxRecentProjects As Integer = 5
     Public Property LastProjectFolder As String = String.Empty
     Public Property RecentProjects As New List(Of String)
+
+    ''' <summary>
+    ''' The serial port the probe is on - "COM3" and so on - and how fast to talk to
+    ''' it. Blank means there is no probe, and the Terminal falls back to turning
+    ''' lines straight round so it is still usable.
+    '''
+    ''' These live with the settings rather than the project on purpose: which USB
+    ''' port a probe turns up on belongs to the machine, not to the design.
+    ''' </summary>
+    Public Property ProbePort As String = String.Empty
+    Public Property ProbeBaud As Integer = 115200
 End Class
 
 Public Module AppSettings
@@ -167,6 +178,9 @@ Public Module AppSettings
         If Current.WindowHeight < 600 Then Current.WindowHeight = 600
 
         If Current.LastProjectFolder Is Nothing Then Current.LastProjectFolder = String.Empty
+
+        If Current.ProbePort Is Nothing Then Current.ProbePort = String.Empty
+        If Current.ProbeBaud < 300 Then Current.ProbeBaud = 115200
 
         If Current.RecentProjects Is Nothing Then
             Current.RecentProjects = New List(Of String)

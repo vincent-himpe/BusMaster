@@ -23,8 +23,11 @@
     <SolidColorBrush x:Key="Brush_Bit_Text"          Color="#FFFFFFFF"/>
 
     <!-- BitFieldEditor padlock: blue when open, red when shut. -->
-    <SolidColorBrush x:Key="Brush_Lock_Open"         Color="#FF4C9CE8"/>
-    <SolidColorBrush x:Key="Brush_Lock_Shut"         Color="#FFE05C5C"/>
+    <!-- The per-register visibility switch. Off is plain white - it is the
+         ordinary state, not a warning - and on is the same blue everything else
+         active uses. Deliberately no red: nothing here is dangerous. -->
+    <SolidColorBrush x:Key="Brush_Register_Hidden"   Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Brush_Register_Shown"    Color="#FF4C9CE8"/>
 
     <!-- BitFieldEditor register name label: light green, on the same backdrop as
          the value box beside it. -->
@@ -44,10 +47,53 @@
          window, so "armed" is obvious from the corner of the eye. -->
     <SolidColorBrush x:Key="Brush_Record"            Color="#FFE02020"/>
 
-    <!-- Event log. Stripes are 90% and 75% black; the marker in column two picks
-         the ink for the rest of the line. -->
-    <SolidColorBrush x:Key="Brush_Log_Row"           Color="#FF1A1A1A"/>
-    <SolidColorBrush x:Key="Brush_Log_Row_Alternate" Color="#FF404040"/>
+    <!-- Read All on the toolbar. Softer than the record disc, which has to stay
+         the loudest red in the window. -->
+    <SolidColorBrush x:Key="Brush_Toolbar_Read"      Color="#FFE05C5C"/>
+
+    <!-- Delete on the toolbar. The same red as Read All, so "red" means one thing
+         up there rather than two. -->
+    <SolidColorBrush x:Key="Brush_Toolbar_Delete"    Color="#FFE05C5C"/>
+
+    <!-- The probe link: grey when there is nothing on the end of it, green once
+         the port is open. -->
+    <SolidColorBrush x:Key="Brush_Probe_Idle"        Color="#FF9A9A9A"/>
+    <SolidColorBrush x:Key="Brush_Probe_Live"        Color="#FF3FE06B"/>
+
+    <!-- Command window. The history sits on 90% black - darker than the line being
+         typed, so the two read as different places.
+
+         The three levels of a name are pastels, light enough to tell apart at a
+         glance without any of them shouting; everything structural stays white. -->
+    <SolidColorBrush x:Key="Brush_Command_History"   Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="Brush_Command_Device"    Color="#FFF2E08A"/>
+    <SolidColorBrush x:Key="Brush_Command_Register"  Color="#FFE3A1A1"/>
+    <SolidColorBrush x:Key="Brush_Command_Bit"       Color="#FFA8E0A8"/>
+    <SolidColorBrush x:Key="Brush_Command_Number"    Color="#FF9CDCFE"/>
+    <SolidColorBrush x:Key="Brush_Command_Comment"   Color="#FF57A85F"/>
+    <SolidColorBrush x:Key="Brush_Command_Result"    Color="#FFE05C5C"/>
+    <SolidColorBrush x:Key="Brush_Command_Plain"     Color="#FFFFFFFF"/>
+
+    <!-- The line the caret is on. The same blue the log paints its current cell. -->
+    <SolidColorBrush x:Key="Brush_Command_Active"    Color="#FF1F4E8C"/>
+
+    <!-- Terminal. Which way a line went is the only thing its colour says: light
+         green out to the probe, light blue back from it. Both are colours already
+         in use elsewhere in the window. -->
+    <SolidColorBrush x:Key="Brush_Terminal_Sent"     Color="#FF90EE90"/>
+    <SolidColorBrush x:Key="Brush_Terminal_Received" Color="#FF9CDCFE"/>
+
+    <!-- The link talking about itself rather than carrying traffic. Grey for
+         something that merely happened, red only for something that went wrong -
+         a connection made is not a warning. -->
+    <SolidColorBrush x:Key="Brush_Terminal_Notice"   Color="#FFA0A0A0"/>
+    <SolidColorBrush x:Key="Brush_Terminal_Problem"  Color="#FFE05C5C"/>
+
+    <!-- Event log. Stripes are 95% and 90% black - just enough to tell one line
+         from the next; the marker in column two picks the ink for the rest of the
+         line. The line number gutter stays at 75%. -->
+    <SolidColorBrush x:Key="Brush_Log_Row"           Color="#FF0D0D0D"/>
+    <SolidColorBrush x:Key="Brush_Log_Row_Alternate" Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="Brush_Log_Number"        Color="#FF404040"/>
     <SolidColorBrush x:Key="Brush_Log_Active_Row"    Color="#FF4A90D9"/>
     <SolidColorBrush x:Key="Brush_Log_Active_Cell"   Color="#FF1F4E8C"/>
@@ -78,6 +124,10 @@
     <SolidColorBrush x:Key="Brush_Device_Header"     Color="#FF262626"/>
     <SolidColorBrush x:Key="Brush_Device_Header_Text" Color="#FFFFFFFF"/>
 
+    <!-- The grab bars in the blank stretch of the header - 75% black, one step up
+         from the 85% behind them, so they read without shouting. -->
+    <SolidColorBrush x:Key="Brush_Device_Grab"       Color="#FF404040"/>
+
     <!-- DevicePanel disclosure triangle: hollow orange when collapsed, filled
          yellow when expanded. -->
     <SolidColorBrush x:Key="Brush_Disclosure_Collapsed" Color="#FFFF9A3C"/>
@@ -107,7 +157,17 @@
 
     <!-- Icon font. Present on every Windows 8.1+ install, so the toolbar needs no
          image assets. -->
-    <FontFamily x:Key="Font_Glyph">Segoe MDL2 Assets</FontFamily>
+    <!-- Segoe Fluent Icons rather than Segoe MDL2 Assets: the same symbols redrawn,
+         and several read better at toolbar size - the broken-link glyph especially.
+         It ships with Windows 11 but NOT Windows 10, where MDL2 is the one to fall
+         back to. One place to change if this ever has to run on an older bench.
+
+         The font has no bold face, so FontWeight="Bold" is synthesised - it does
+         thicken the strokes, which is what the glyphs are set in throughout. -->
+    <FontFamily x:Key="Font_Glyph">Segoe Fluent Icons</FontFamily>
+
+    <!-- Every glyph in the program is set at this weight. -->
+    <FontWeight x:Key="Weight_Glyph">Bold</FontWeight>
 
 
     <!-- ==========================================================================
@@ -341,6 +401,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource Brush_Glyph_Accent}"/>
         <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
         <Setter Property="FontSize" Value="15"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Template">
@@ -472,6 +533,145 @@
         </Setter>
     </Style>
 
+    <!-- A glyph inside a drawn circle. Nothing uses it since the rescan button
+         moved to E1CD, which is already round - kept because neither Segoe font
+         has a ringed icon of any kind, so the next one that wants a badge round
+         it will want this. The ring takes its colour from the button, so the two
+         can never drift apart. -->
+    <Style x:Key="Style_Toolbar_Ring_Button" TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Glyph_Accent}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+
+                        <Border x:Name="bdr_Ring"
+                                Width="19" Height="19"
+                                CornerRadius="10"
+                                BorderThickness="1.3"
+                                BorderBrush="{TemplateBinding Foreground}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                UseLayoutRounding="False">
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Accent}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Connect / disconnect the probe. Sized and hovered like the glyph buttons,
+         and the same shape either way - only the colour says whether the link is
+         up, which is the one thing worth reading at a glance. -->
+    <Style x:Key="Style_Toolbar_Connect_Toggle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Probe_Idle}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ToolTip" Value="Not connected - click to open the probe's port"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="txt_Link"
+                                   Text="&#xE8CD;"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontFamily="{TemplateBinding FontFamily}"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <!-- E8CD is the broken link, E8CE the joined one. The
+                                 shape says it as well as the colour does. -->
+                            <Setter TargetName="txt_Link" Property="Text" Value="&#xE8CE;"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Probe_Live}"/>
+                            <Setter Property="ToolTip" Value="Connected - click to close the probe's port"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A glyph button on a device panel's header. The toolbar button, sized down
+         to sit in a header bar without stretching it. -->
+    <Style x:Key="Style_Device_Action" TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="22"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Accent}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Primary}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Toolbar button carrying a short word rather than a glyph. -->
     <Style x:Key="Style_Toolbar_Text_Button" TargetType="{x:Type Button}"
            BasedOn="{StaticResource Style_Toolbar_Button}">
@@ -593,6 +793,137 @@
     <Style TargetType="{x:Type Label}">
         <Setter Property="Foreground" Value="{StaticResource Brush_Text_Primary}"/>
         <Setter Property="Padding" Value="2,3"/>
+    </Style>
+
+    <!-- ==========================================================================
+         Command window - the name completion list
+
+         A ListBox is light by default, and its items carry their own selection
+         brushes from the system, so both are retemplated rather than recoloured.
+         ========================================================================== -->
+
+    <Style x:Key="Style_Completion_Item" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Foreground" Value="{StaticResource Brush_Text_Primary}"/>
+        <Setter Property="Padding" Value="8,3"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Border x:Name="bdr_Item"
+                            Background="Transparent"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="bdr_Item" Property="Background"
+                                    Value="{StaticResource Brush_Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The command history. A RichTextBox is light by default, so all of its ink
+         is set here. The paragraph margin that would space the lines out like prose
+         is dealt with on the control itself - Resources is not a dependency
+         property, so a Setter for it throws at load. -->
+    <Style x:Key="Style_Command_History" TargetType="{x:Type RichTextBox}">
+        <Setter Property="Background" Value="{StaticResource Brush_Command_History}"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Command_Plain}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource Brush_Command_Plain}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource Brush_Accent}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontFamily" Value="Consolas"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="AcceptsReturn" Value="True"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+    </Style>
+
+    <!-- The terminal's transcript. The command history without the editing: the
+         user reads it and double-clicks it, but only the probe writes it. -->
+    <Style x:Key="Style_Terminal_History" TargetType="{x:Type RichTextBox}"
+           BasedOn="{StaticResource Style_Command_History}">
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="IsReadOnlyCaretVisible" Value="False"/>
+    </Style>
+
+    <!-- ==========================================================================
+         Spin buttons, for the terminal's buffer size
+
+         Two styles rather than one with the arrow swapped: a Setter will carry
+         literal geometry but not a string that looks like it.
+         ========================================================================== -->
+
+    <Style x:Key="Style_Spinner" TargetType="{x:Type RepeatButton}">
+        <Setter Property="Width" Value="15"/>
+        <Setter Property="Height" Value="10"/>
+        <Setter Property="Background" Value="{StaticResource Brush_Chrome_Background}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Focusable" Value="False"/>
+    </Style>
+
+    <Style x:Key="Style_Spinner_Up" TargetType="{x:Type RepeatButton}"
+           BasedOn="{StaticResource Style_Spinner}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                    <Border x:Name="bdr_Spin"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{StaticResource Brush_Chrome_Border}"
+                            BorderThickness="1,1,1,0"
+                            SnapsToDevicePixels="True">
+                        <Path Data="M 4,6 L 7,2.5 L 10,6 Z"
+                              Fill="{StaticResource Brush_Glyph_Accent}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Spin" Property="Background"
+                                    Value="{StaticResource Brush_Item_Hover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Style_Spinner_Down" TargetType="{x:Type RepeatButton}"
+           BasedOn="{StaticResource Style_Spinner}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                    <Border x:Name="bdr_Spin"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{StaticResource Brush_Chrome_Border}"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <Path Data="M 4,4 L 10,4 L 7,7.5 Z"
+                              Fill="{StaticResource Brush_Glyph_Accent}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Spin" Property="Background"
+                                    Value="{StaticResource Brush_Item_Hover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Style_Completion_List" TargetType="{x:Type ListBox}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontFamily" Value="Consolas"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource Style_Completion_Item}"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
     </Style>
 
     <!-- ==========================================================================
@@ -943,12 +1274,17 @@
         <Setter Property="Foreground" Value="{Binding CommentForeground}"/>
     </Style>
 
+    <!-- Fixed width throughout the grid. The block labels that fence off a device
+         write are drawn out of dashes and equals signs, and only line up under a
+         font where every character is the same width. -->
     <Style x:Key="Style_Log_Display" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="Consolas"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
 
     <Style x:Key="Style_Log_Edit" TargetType="{x:Type TextBox}">
+        <Setter Property="FontFamily" Value="Consolas"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="#FFFFFFFF"/>
         <Setter Property="CaretBrush" Value="#FFFFFFFF"/>

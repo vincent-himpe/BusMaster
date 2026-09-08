@@ -60,10 +60,6 @@ Class MainWindow
         DeviceActions.AddDevice()
     End Sub
 
-    Private Sub mnu_Device_Remove_Device_Click(sender As Object, e As RoutedEventArgs)
-        DeviceActions.RemoveDevice()
-    End Sub
-
     ' -- Bus menu -------------------------------------------------------------
 
     Private Sub mnu_Bus_Scan_Bus_Click(sender As Object, e As RoutedEventArgs)
@@ -96,6 +92,14 @@ Class MainWindow
         EventLogCore.ShowLog()
     End Sub
 
+    Private Sub mnu_Tools_Show_Command_Click(sender As Object, e As RoutedEventArgs)
+        CommandCore.ShowCommand()
+    End Sub
+
+    Private Sub mnu_Tools_Show_Terminal_Click(sender As Object, e As RoutedEventArgs)
+        TerminalCore.ShowTerminal()
+    End Sub
+
     Private Sub tlbr_ShowLog_Click(sender As Object, e As RoutedEventArgs)
         EventLogCore.ShowLog()
     End Sub
@@ -124,6 +128,22 @@ Class MainWindow
 
     Private Sub tlbr_Help_Click(sender As Object, e As RoutedEventArgs)
         AppCore.ShowHelp()
+    End Sub
+
+    Private Sub tlbr_Probe_Rescan_Click(sender As Object, e As RoutedEventArgs)
+        AppCore.RescanProbes()
+    End Sub
+
+    Private Sub tlbr_Probe_List_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+        AppCore.ProbePortChosen(tlbr_Probe_List.SelectedItem)
+    End Sub
+
+    Private Sub tlbr_Probe_Connect_Checked(sender As Object, e As RoutedEventArgs)
+        AppCore.ProbeConnectionRequested(True)
+    End Sub
+
+    Private Sub tlbr_Probe_Connect_Unchecked(sender As Object, e As RoutedEventArgs)
+        AppCore.ProbeConnectionRequested(False)
     End Sub
 
     Private Sub tlbr_Record_Checked(sender As Object, e As RoutedEventArgs)
@@ -163,6 +183,10 @@ Class MainWindow
         AppCore.RemoveDevicePanel(e.OriginalSource)
     End Sub
 
+    Private Sub stk_Devices_ReorderStarted(sender As Object, e As RoutedEventArgs)
+        DeviceReorder.Begin(e.OriginalSource)
+    End Sub
+
     Private Sub tlbr_ValueType_Click(sender As Object, e As RoutedEventArgs)
         AppCore.ToggleValueDisplay()
     End Sub
@@ -183,12 +207,24 @@ Class MainWindow
         BusActions.WriteAll()
     End Sub
 
+    Private Sub tlbr_Read_All_Click(sender As Object, e As RoutedEventArgs)
+        BusActions.ReadAll()
+    End Sub
+
+    Private Sub tlbr_Workspace_List_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+        WorkspaceCore.ViewChosen()
+    End Sub
+
     Private Sub tlbr_Workspace_Save_Click(sender As Object, e As RoutedEventArgs)
-        AppCore.SaveWorkspace()
+        WorkspaceCore.SaveView()
+    End Sub
+
+    Private Sub tlbr_Workspace_Save_MouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
+        WorkspaceCore.UpdateView()
     End Sub
 
     Private Sub tlbr_Workspace_Delete_Click(sender As Object, e As RoutedEventArgs)
-        AppCore.DeleteWorkspace()
+        WorkspaceCore.DeleteView()
     End Sub
 
     ' -- Keyboard shortcuts ---------------------------------------------------
