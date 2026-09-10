@@ -64,6 +64,24 @@ Class DeviceEditorWindow
         DeviceEditorCore.AddressBitsEdited()
     End Sub
 
+    ' -- Register table tool bar ----------------------------------------------
+
+    Private Sub tlbr_Add8_Click(sender As Object, e As RoutedEventArgs)
+        DeviceEditorCore.AddByteRegister()
+    End Sub
+
+    Private Sub tlbr_Add16_Click(sender As Object, e As RoutedEventArgs)
+        DeviceEditorCore.AddWordRegister()
+    End Sub
+
+    Private Sub tlbr_DeleteRow_Click(sender As Object, e As RoutedEventArgs)
+        DeviceEditorCore.DeleteCurrentRow()
+    End Sub
+
+    Private Sub tlbr_SortRows_Click(sender As Object, e As RoutedEventArgs)
+        DeviceEditorCore.SortRowsByAddress()
+    End Sub
+
     ' -- Buttons --------------------------------------------------------------
 
     Private Sub btn_Save_Click(sender As Object, e As RoutedEventArgs)

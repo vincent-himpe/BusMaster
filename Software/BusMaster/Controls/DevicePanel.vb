@@ -841,6 +841,67 @@ Public Class DevicePanel
     End Sub
 
     ''' <summary>
+    ''' Reads this panel's device file again, for when the file has been edited
+    ''' underneath it. The register list is rebuilt from the file, and everything
+    ''' the user had set up on the panel is put back on top of it:
+    '''
+    '''   - the target address, if the part can still be strapped to it
+    '''   - which registers have their visibility switch on, matched by address
+    '''   - the byte showing in each register, matched by address
+    '''   - open or closed
+    '''
+    ''' The function name is not touched - LoadDevice never writes it.
+    '''
+    ''' Values are put back by address, which is what "the same register" can mean
+    ''' without reading the bus again. A register the edit removed takes its value
+    ''' with it, and one it added starts at zero. Nothing here is a bus operation:
+    ''' assigning Value does not raise ValueChanged, so no write goes out and no
+    ''' line lands in the log.
+    '''
+    ''' Does nothing for a panel with no file behind it.
+    ''' </summary>
+    Public Sub ReloadDevice()
+
+        If LoadedFromFile.Length = 0 Then Exit Sub
+
+        Dim wasExpanded As Boolean = IsExpanded
+        Dim wasTargeting As Integer = CInt(DeviceAddress)
+        Dim wasLocked As List(Of Integer) = GetLockedRegisters()
+
+        Dim wasShowing As New Dictionary(Of Byte, Byte)
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            wasShowing(editor.Registeraddress) = editor.Value
+        Next
+
+        LoadDevice(LoadedFromFile)
+
+        ' Only if the part still answers there - the edit may have moved its base
+        ' address or changed how many pins choose it, and then the old target means
+        ' nothing. ApplyTargetAddresses is what puts the header and the drop-down
+        ' back in step with each other.
+        If TargetAddresses().Contains(wasTargeting) Then
+            DeviceAddress = CByte(wasTargeting)
+            ApplyTargetAddresses()
+        End If
+
+        For Each editor As BitFieldEditor In RegisterEditors
+
+            Dim showing As Byte
+
+            If wasShowing.TryGetValue(editor.Registeraddress, showing) Then editor.Value = showing
+
+        Next
+
+        SetLockedRegisters(wasLocked)
+
+        ' Last word, because BuildRegisterEditors opens the panel to show that it
+        ' has something in it.
+        IsExpanded = wasExpanded
+
+    End Sub
+
+    ''' <summary>
     ''' Turns whatever was passed in into a file that exists, or an empty string.
     ''' Tries it as given first, then as a name in the device library.
     ''' </summary>

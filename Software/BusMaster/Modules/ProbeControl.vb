@@ -20,6 +20,7 @@
 '  hardware attached.
 ' ============================================================================
 
+Imports System.Globalization
 Imports System.IO.Ports
 Imports System.Runtime.InteropServices
 Imports System.Text
@@ -130,6 +131,96 @@ Public Module ProbeControl
         ' TODO: whatever has to be made of the line that came back.
 
         TerminalCore.ShowReceived(If(text, String.Empty))
+
+    End Sub
+
+
+    ' ========================================================================
+    '  Lines the user drives by hand
+    '
+    '  The four signals and the target's reset line are not bus traffic, so they
+    '  do not go through BusEvents - they are wires on the probe, and this is the
+    '  probe's file. Each one reports what it was asked to do and has a TODO where
+    '  the command to the probe goes; nothing is sent to the hardware yet.
+    ' ========================================================================
+
+    ''' <summary>
+    ''' One of the four user signals was switched. Source is 1 to 4 - red, green,
+    ''' blue, yellow, the order they sit in on the toolbar - and NewState is what
+    ''' the switch was just set to.
+    ''' </summary>
+    Public Sub UserSignal(Source As Integer, NewState As Boolean)
+
+        ' TODO: tell the probe to drive user line Source to NewState.
+
+        AppCore.SetStatus("User signal " & Source.ToString(CultureInfo.InvariantCulture) &
+                          If(NewState, " high", " low"))
+
+    End Sub
+
+    ''' <summary>
+    ''' The target's reset line was held or released. True holds the part in reset;
+    ''' False lets it run.
+    ''' </summary>
+    Public Sub TargetReset(NewState As Boolean)
+
+        ' TODO: tell the probe to assert or release the target's reset line.
+
+        AppCore.SetStatus(If(NewState, "Target held in reset", "Target released - running"))
+
+    End Sub
+
+    ''' <summary>
+    ''' Reset the target and let go again, in one go - the button does not stay
+    ''' down, so there is no state to pass.
+    ''' </summary>
+    Public Sub TargetResetPulse()
+
+        ' TODO: tell the probe to pulse the target's reset line.
+
+        AppCore.SetStatus("Reset pulse sent to the target")
+
+    End Sub
+
+    ''' <summary>
+    ''' Let go of the bus: stop driving SCL and SDA and leave both lines to their
+    ''' pull-ups, so something else can have a turn.
+    ''' </summary>
+    Public Sub ReleaseBus()
+
+        ' TODO: tell the probe to float SCL and SDA.
+
+        AppCore.SetStatus("Bus released")
+
+    End Sub
+
+    ''' <summary>
+    ''' Clear a bus a slave is holding down: clock SCL until the slave lets SDA go,
+    ''' then issue a stop so everything is back at idle.
+    '''
+    ''' The Bus menu's Reset Bus is still a stub and describes the same operation.
+    ''' One of the two should end up calling the other rather than both growing
+    ''' their own version.
+    ''' </summary>
+    Public Sub ClearStuckBus()
+
+        ' TODO: tell the probe to clock out a stuck slave, then send a stop.
+
+        AppCore.SetStatus("Cleared the bus")
+
+    End Sub
+
+    ''' <summary>
+    ''' How hard the probe drives SCL and SDA. True is push-pull - both levels
+    ''' driven, 0/1 - and False is open drain, 0/Z, which is what I2C is and where
+    ''' the switch starts.
+    ''' </summary>
+    Public Sub SetDriveStrength(NewState As Boolean)
+
+        ' TODO: tell the probe which way to drive the two lines.
+
+        AppCore.SetStatus(If(NewState, "Bus lines driven push-pull (0/1)",
+                                       "Bus lines open drain (0/Z)"))
 
     End Sub
 

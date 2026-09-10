@@ -101,6 +101,10 @@ Public Module AppCore
         RefreshValueDisplayControls()
         RefreshProbePorts()
 
+        ' Nothing is connected yet, so this is what greys the bus and target blocks
+        ' out to start with.
+        RefreshProbeConnection()
+
         ' One handler for every register on screen, now and later. Attached before
         ' any device is loaded so nothing can slip past it.
         BusEvents.Initialise()
@@ -870,6 +874,13 @@ Public Module AppCore
         ' and there is no point offering to look for another while it is.
         Shell.tlbr_Probe_List.IsEnabled = Not live
         Shell.tlbr_Probe_Rescan.IsEnabled = Not live
+
+        ' Everything to the right of the connect button drives a wire, so none of
+        ' it means anything with no probe on the other end. Two panels, so this is
+        ' two lines rather than a list that has to be kept up to date as controls
+        ' are added.
+        Shell.tlbr_Bus_Block.IsEnabled = live
+        Shell.tlbr_Target_Block.IsEnabled = live
 
         If Shell.tlbr_Probe_Connect.IsChecked.GetValueOrDefault() = live Then Exit Sub
 

@@ -146,6 +146,49 @@ Class MainWindow
         AppCore.ProbeConnectionRequested(False)
     End Sub
 
+    ' The four user signals. Click rather than Checked and Unchecked: the state is
+    ' an argument, so one handler covers both ways for each switch.
+
+    Private Sub tlbr_Signal_1_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.UserSignal(1, tlbr_Signal_1.IsChecked.GetValueOrDefault())
+    End Sub
+
+    Private Sub tlbr_Signal_2_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.UserSignal(2, tlbr_Signal_2.IsChecked.GetValueOrDefault())
+    End Sub
+
+    Private Sub tlbr_Signal_3_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.UserSignal(3, tlbr_Signal_3.IsChecked.GetValueOrDefault())
+    End Sub
+
+    Private Sub tlbr_Signal_4_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.UserSignal(4, tlbr_Signal_4.IsChecked.GetValueOrDefault())
+    End Sub
+
+    Private Sub tlbr_Target_Reset_Checked(sender As Object, e As RoutedEventArgs)
+        ProbeControl.TargetReset(True)
+    End Sub
+
+    Private Sub tlbr_Target_Reset_Unchecked(sender As Object, e As RoutedEventArgs)
+        ProbeControl.TargetReset(False)
+    End Sub
+
+    Private Sub tlbr_Target_Pulse_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.TargetResetPulse()
+    End Sub
+
+    Private Sub tlbr_Bus_Release_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.ReleaseBus()
+    End Sub
+
+    Private Sub tlbr_Bus_Clear_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.ClearStuckBus()
+    End Sub
+
+    Private Sub tlbr_Bus_Drive_Click(sender As Object, e As RoutedEventArgs)
+        ProbeControl.SetDriveStrength(tlbr_Bus_Drive.IsChecked.GetValueOrDefault())
+    End Sub
+
     Private Sub tlbr_Record_Checked(sender As Object, e As RoutedEventArgs)
         AppCore.RecordingChanged(True)
     End Sub

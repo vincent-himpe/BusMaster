@@ -70,6 +70,57 @@ Public Module DeviceActions
     End Sub
 
     ''' <summary>
+    ''' A device file has just been written, so every panel on screen showing that
+    ''' file is built again from it. Returns how many were reloaded.
+    '''
+    ''' Called by the Device Editor on a successful save: without this, editing a
+    ''' device leaves the panels already on screen showing the register list the
+    ''' file used to have until the project is opened again.
+    '''
+    ''' Matching is on the resolved path, so the same device reached by a bare name
+    ''' and by a full path is still the same device. Each panel keeps its own
+    ''' function name, target, switches, values and open state - see
+    ''' DevicePanel.ReloadDevice.
+    ''' </summary>
+    Public Function ReloadDeviceFile(devicefile As String) As Integer
+
+        If String.IsNullOrWhiteSpace(devicefile) Then Return 0
+
+        Dim wanted As String
+
+        Try
+            wanted = IO.Path.GetFullPath(devicefile)
+        Catch
+            Return 0
+        End Try
+
+        Dim reloaded As Integer = 0
+
+        For Each panel As DevicePanel In AppCore.DevicePanels()
+
+            If panel.DeviceFile.Length = 0 Then Continue For
+
+            Dim showing As String
+
+            Try
+                showing = IO.Path.GetFullPath(panel.DeviceFile)
+            Catch
+                Continue For
+            End Try
+
+            If Not String.Equals(showing, wanted, StringComparison.OrdinalIgnoreCase) Then Continue For
+
+            panel.ReloadDevice()
+            reloaded += 1
+
+        Next
+
+        Return reloaded
+
+    End Function
+
+
+    ''' <summary>
     ''' Opens the editor modally. DeviceEditorCore reports its own success to the
     ''' status bar, so only the abandoned case is worth a message here.
     ''' </summary>

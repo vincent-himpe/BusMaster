@@ -178,7 +178,181 @@
         </Menu>
 
         <!-- ==================================================================
-             Tool bar
+             Tool bar, first row - the hardware.
+
+             Left: the probe link. Right: four user signals, then whether the
+             target is held in reset, then a reset pulse. Everything on this row
+             acts on the thing on the bench rather than on the project, and the
+             signals sit at the right hand end so they stay put as controls are
+             added on the left.
+
+             The two groups to the right of the connect button are panels rather
+             than loose right-docked children, so they read left to right here the
+             way they do on screen, and so each can be greyed out in one move.
+             ================================================================== -->
+        <Border x:Name="tlbr_Hardware"
+                DockPanel.Dock="Top"
+                Background="{StaticResource Brush_Chrome_Background}"
+                BorderBrush="{StaticResource Brush_Chrome_Border}"
+                BorderThickness="0,0,0,1"
+                Padding="4,3">
+            <DockPanel LastChildFill="False">
+
+                <TextBlock x:Name="tlbr_Probe_Label"
+                           DockPanel.Dock="Left"
+                           Margin="4,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource Brush_Text_Primary}"
+                           Text="Probe"/>
+
+                <Button x:Name="tlbr_Probe_Rescan"
+                        DockPanel.Dock="Left"
+                        Margin="4,0,0,0"
+                        Style="{StaticResource Style_Toolbar_Button}"
+                        Foreground="{StaticResource Brush_Workspace_Action}"
+                        Content="&#xE1CD;"
+                        ToolTip="Look for a BusMaster probe on the USB bus"
+                        Click="tlbr_Probe_Rescan_Click"/>
+
+                <!-- Room to spell out a probe's name now that this row is its
+                     own, and then some: a probe can be given a long name and the
+                     list is no use if it reads "BusMaster Front..." -->
+                <ComboBox x:Name="tlbr_Probe_List"
+                          DockPanel.Dock="Left"
+                          Width="300"
+                          Margin="4,0"
+                          VerticalAlignment="Center"
+                          ToolTip="Serial port the probe is on"
+                          SelectionChanged="tlbr_Probe_List_SelectionChanged"/>
+
+                <ToggleButton x:Name="tlbr_Probe_Connect"
+                              DockPanel.Dock="Left"
+                              Style="{StaticResource Style_Toolbar_Connect_Toggle}"
+                              Checked="tlbr_Probe_Connect_Checked"
+                              Unchecked="tlbr_Probe_Connect_Unchecked"/>
+
+                <Separator x:Name="tlbr_Bus_Divider"
+                           DockPanel.Dock="Left"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <!-- Everything the probe does to the bus itself. One label for the
+                     three of them, so each button only has to say what it does.
+                     Disabled as a block while there is no probe: see
+                     AppCore.RefreshProbeConnection. -->
+                <StackPanel x:Name="tlbr_Bus_Block"
+                            DockPanel.Dock="Left"
+                            Orientation="Horizontal">
+
+                    <TextBlock x:Name="tlbr_Bus_Label"
+                               Style="{StaticResource Style_Toolbar_Label}"
+                               Margin="2,0,2,0"
+                               Text="Bus:"/>
+
+                    <Button x:Name="tlbr_Bus_Release"
+                            Style="{StaticResource Style_Toolbar_Bus_Button}"
+                            ToolTip="Let go of the bus - stop driving SCL and SDA"
+                            Click="tlbr_Bus_Release_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Style_Toolbar_Bus_Glyph}" Text="&#xEC26;"/>
+                            <TextBlock Style="{StaticResource Style_Toolbar_Bus_Text}" Text="Release"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="tlbr_Bus_Clear"
+                            Style="{StaticResource Style_Toolbar_Bus_Button}"
+                            ToolTip="Clock a stuck slave off the bus and leave it idle"
+                            Click="tlbr_Bus_Clear_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Style_Toolbar_Bus_Glyph}" Text="&#xEA99;"/>
+                            <TextBlock Style="{StaticResource Style_Toolbar_Bus_Text}" Text="Clear"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- How the probe drives the two lines. Released is 0/Z, which
+                         is what I2C is: pull down, or let the pull-up have it.
+                         Pressed is 0/1, driving both ways - useful on a bench, and
+                         not something to be in by accident, so it is not where
+                         this starts. -->
+                    <ToggleButton x:Name="tlbr_Bus_Drive"
+                                  Style="{StaticResource Style_Toolbar_Drive_Toggle}"
+                                  Click="tlbr_Bus_Drive_Click"/>
+
+                </StackPanel>
+
+                <!-- The signals and the target's reset line. One panel rather
+                     than a row of right-docked children, so these read left to
+                     right in the file the way they do on screen - and so the whole
+                     lot can be disabled in one go while there is no probe. -->
+                <StackPanel x:Name="tlbr_Target_Block"
+                            DockPanel.Dock="Right"
+                            Orientation="Horizontal">
+
+                    <!-- Four lines the user can raise and lower by hand. Round like
+                         radio buttons because that is what a signal level looks
+                         like, but each one is its own switch - they do not exclude
+                         each other. -->
+                    <ToggleButton x:Name="tlbr_Signal_1"
+                                  Style="{StaticResource Style_Toolbar_Signal_Toggle}"
+                                  Foreground="{StaticResource Brush_Signal_1}"
+                                  ToolTip="User signal 1"
+                                  Click="tlbr_Signal_1_Click"/>
+
+                    <ToggleButton x:Name="tlbr_Signal_2"
+                                  Style="{StaticResource Style_Toolbar_Signal_Toggle}"
+                                  Foreground="{StaticResource Brush_Signal_2}"
+                                  ToolTip="User signal 2"
+                                  Click="tlbr_Signal_2_Click"/>
+
+                    <ToggleButton x:Name="tlbr_Signal_3"
+                                  Style="{StaticResource Style_Toolbar_Signal_Toggle}"
+                                  Foreground="{StaticResource Brush_Signal_3}"
+                                  ToolTip="User signal 3"
+                                  Click="tlbr_Signal_3_Click"/>
+
+                    <ToggleButton x:Name="tlbr_Signal_4"
+                                  Style="{StaticResource Style_Toolbar_Signal_Toggle}"
+                                  Foreground="{StaticResource Brush_Signal_4}"
+                                  ToolTip="User signal 4"
+                                  Click="tlbr_Signal_4_Click"/>
+
+                    <Separator x:Name="tlbr_Target_Divider_Left"
+                               Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                    <TextBlock x:Name="tlbr_Target_Label"
+                               Style="{StaticResource Style_Toolbar_Label}"
+                               Margin="4,0,2,0"
+                               Text="Target"/>
+
+                    <!-- Holds the target's reset line. Checked is held - red, "in
+                         RESET" - and released is blue and running, which is where
+                         it starts: nothing is asserted until it is asked for. -->
+                    <ToggleButton x:Name="tlbr_Target_Reset"
+                                  Style="{StaticResource Style_Toolbar_Target_Toggle}"
+                                  Checked="tlbr_Target_Reset_Checked"
+                                  Unchecked="tlbr_Target_Reset_Unchecked"/>
+
+                    <Separator x:Name="tlbr_Target_Divider_Right"
+                               Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                    <!-- A momentary reset, as against holding the line: pressed and
+                         released in one go. Green until the moment it is pressed. -->
+                    <Button x:Name="tlbr_Target_Pulse"
+                            Style="{StaticResource Style_Toolbar_Pulse_Button}"
+                            Content="&#xE896;"
+                            ToolTip="Pulse the target's reset line"
+                            Click="tlbr_Target_Pulse_Click"/>
+
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ==================================================================
+             Tool bar, second row - the project and workspace controls.
+
+             The bar was full at the window's 1000px default, so it is two rows
+             now. The probe and target controls are the hardware row above; every
+             control that acts on the project or the workspace is down here.
              ================================================================== -->
         <Border x:Name="tlbr_Main"
                 DockPanel.Dock="Top"
@@ -229,39 +403,6 @@
                         ToolTip="Show every register value in decimal or hexadecimal"
                         Click="tlbr_ValueType_Click"/>
 
-                <Separator x:Name="tlbr_Probe_Divider"
-                           DockPanel.Dock="Left"
-                           Style="{StaticResource Style_Toolbar_Separator}"/>
-
-                <TextBlock x:Name="tlbr_Probe_Label"
-                           DockPanel.Dock="Left"
-                           Margin="4,0,0,0"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource Brush_Text_Primary}"
-                           Text="Probe"/>
-
-                <Button x:Name="tlbr_Probe_Rescan"
-                        DockPanel.Dock="Left"
-                        Margin="4,0,0,0"
-                        Style="{StaticResource Style_Toolbar_Button}"
-                        Foreground="{StaticResource Brush_Workspace_Action}"
-                        Content="&#xE1CD;"
-                        ToolTip="Look for a BusMaster probe on the USB bus"
-                        Click="tlbr_Probe_Rescan_Click"/>
-
-                <ComboBox x:Name="tlbr_Probe_List"
-                          DockPanel.Dock="Left"
-                          Width="94"
-                          Margin="4,0"
-                          VerticalAlignment="Center"
-                          ToolTip="Serial port the probe is on"
-                          SelectionChanged="tlbr_Probe_List_SelectionChanged"/>
-
-                <ToggleButton x:Name="tlbr_Probe_Connect"
-                              DockPanel.Dock="Left"
-                              Style="{StaticResource Style_Toolbar_Connect_Toggle}"
-                              Checked="tlbr_Probe_Connect_Checked"
-                              Unchecked="tlbr_Probe_Connect_Unchecked"/>
 
                 <!-- Right-docked children fill from the right edge inwards, so the
                      first one declared ends up outermost. Reading the block below
@@ -345,9 +486,12 @@
                         ToolTip="Write every register to every device"
                         Click="tlbr_Write_All_Click"/>
 
-                <!-- Widths here are what the toolbar has room for at the window's
-                     1000px default, not what looks generous. Adding anything else
-                     up here means taking it from one of these. -->
+                <!-- These widths were what the bar had room for when everything
+                     shared one row at the window's 1000px default. There is slack
+                     now that the probe block has a row of its own, but they are
+                     left as they are: they fit their contents, and both combo
+                     boxes being the same width they were is one less thing that
+                     moved. -->
                 <ComboBox x:Name="tlbr_Operation_List"
                           DockPanel.Dock="Right"
                           Width="132"

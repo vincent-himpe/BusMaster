@@ -30,13 +30,23 @@ Public Module DeviceEditorCore
     Private Const MinRegisterAddress As Integer = -1
     Private Const MaxRegisterAddress As Integer = 255
 
-    ''' <summary>Display index of the Register Name column - where a new row lands.</summary>
-    Private Const RegisterNameColumn As Integer = 1
+    ''' <summary>Display index of the Register Address column - where a new row lands.</summary>
+    Private Const RegisterAddressColumn As Integer = 0
+
+    ''' <summary>Display index of the Group column.</summary>
+    Private Const GroupColumn As Integer = 1
+
+    ''' <summary>Display index of the Register Name column.</summary>
+    Private Const RegisterNameColumn As Integer = 2
 
     ''' <summary>Display index of D7. D0 is seven columns further along.</summary>
-    Private Const FirstBitColumn As Integer = 2
+    Private Const FirstBitColumn As Integer = 3
 
     Private Const BitColumnCount As Integer = 8
+
+    ''' <summary>How many addresses each of the two toolbar buttons takes up.</summary>
+    Private Const ByteRegisterRows As Integer = 1
+    Private Const WordRegisterRows As Integer = 2
 
 
     Private Editor As DeviceEditorWindow
@@ -169,11 +179,24 @@ Public Module DeviceEditorCore
             Next
         End If
 
+        ' Rows appearing or going shifts the whole pattern below them, so the
+        ' colours are worked out again. A Move is the sort doing its work, which
+        ' repaints once at the end rather than on every step.
+        If e.Action <> NotifyCollectionChangedAction.Move Then RefreshRowShades()
+
         If e.Action <> NotifyCollectionChangedAction.Reset Then MarkDirty()
 
     End Sub
 
     Private Sub Row_PropertyChanged(sender As Object, e As PropertyChangedEventArgs)
+
+        ' The row colour is the editor's own bookkeeping, not something the user
+        ' typed in, so it is not an edit.
+        If e.PropertyName = NameOf(DeviceRegisterRow.ShadeIndex) Then Exit Sub
+
+        ' A group tag is the one thing typed into the table that changes how the
+        ' table is coloured, so it repaints as it is typed.
+        If e.PropertyName = NameOf(DeviceRegisterRow.RegisterGroup) Then RefreshRowShades()
 
         MarkDirty()
 
@@ -203,7 +226,6 @@ Public Module DeviceEditorCore
         DataObject.AddPastingHandler(Editor.txt_AddressBits, AddressOf Digits_Pasting)
 
         AddHandler Editor.grd_Registers.PreviewKeyDown, AddressOf Registers_PreviewKeyDown
-        AddHandler Editor.grd_Registers.Sorting, AddressOf Registers_Sorting
 
     End Sub
 
@@ -214,12 +236,10 @@ Public Module DeviceEditorCore
     '  The table is filled in a row at a time, so it moves sideways rather than
     '  downwards:
     '
-    '      Enter          next cell to the right, and off the end of the last row
-    '                     it adds a new one. On an empty D7..D0 cell it first drops
-    '                     that column's bit number in, so holding Enter across the
-    '                     bit columns fills them 7 6 5 4 3 2 1 0.
-    '      Ctrl+Enter     add a row
-    '      Ctrl+Insert    add a row
+    '      Enter          next cell to the right, stopping at the end of the row.
+    '                     On an empty D7..D0 cell it first drops that column's bit
+    '                     number in, so holding Enter across the bit columns fills
+    '                     them 7 6 5 4 3 2 1 0.
     '      Ctrl+Delete    remove the current row, never the last one left
     '      Right          next cell, but only once the caret is past the last
     '                     character - otherwise it walks through the text
@@ -227,8 +247,10 @@ Public Module DeviceEditorCore
     '      Home / End     first and last cell of the row
     '      Up / Down      left alone, so they still move between rows
     '
-    '  The grid's own new-row placeholder is switched off in XAML: rows are only
-    '  ever added here, always at the bottom, and there is always at least one.
+    '  Nothing here adds a row. The grid's own new-row placeholder is switched off
+    '  in XAML and Enter used to grow the table off the last cell; both are gone,
+    '  because a register now has a width and only the toolbar's 8 and 16 buttons
+    '  can say which. There is always at least one row.
     ' ========================================================================
 
     Private Sub Registers_PreviewKeyDown(sender As Object, e As KeyEventArgs)
@@ -240,28 +262,15 @@ Public Module DeviceEditorCore
 
             Case Key.Enter
                 CapitaliseRegisterName()
-                If control Then
-                    AddRegisterRow()
-                ElseIf FillBlankBitCell() Then
-                    ' Filling was this keystroke's job. Step on to the next bit so
-                    ' holding Enter walks D7 down to D0, but do not also grow a row.
-                    MoveCell(1)
-                ElseIf AtLastCellOfLastRow() Then
-                    AddRegisterRow()
-                Else
-                    MoveCell(1)
-                End If
+                ' Filling a bit cell and stepping on are the same keystroke, so
+                ' holding Enter walks D7 down to D0.
+                FillBlankBitCell()
+                MoveCell(1)
                 e.Handled = True
-
-            Case Key.Insert
-                If control Then
-                    AddRegisterRow()
-                    e.Handled = True
-                End If
 
             Case Key.Delete
                 If control Then
-                    RemoveCurrentRow()
+                    DeleteCurrentRow()
                     e.Handled = True
                 End If
 
@@ -427,32 +436,43 @@ Public Module DeviceEditorCore
 
     ' ========================================================================
     '  Adding and removing rows
+    '
+    '  Both toolbar buttons come through AddRegister. The only difference between
+    '  them is how many addresses the register takes and whether those rows carry
+    '  a group tag - one row and no tag is an 8 bit register, two rows sharing a
+    '  tag are a 16 bit one, and the same routine would make a 32 bit register out
+    '  of four.
     ' ========================================================================
 
-    ''' <summary>True when the caret is in the rightmost cell of the bottom row.</summary>
-    Private Function AtLastCellOfLastRow() As Boolean
+    ''' <summary>Toolbar: one register on one address, no group.</summary>
+    Public Sub AddByteRegister()
 
-        Dim grid As DataGrid = Editor.grd_Registers
-        Dim current As DataGridCellInfo = grid.CurrentCell
+        AddRegister(ByteRegisterRows)
 
-        If Not current.IsValid OrElse current.Column Is Nothing Then Return False
-        If current.Column.DisplayIndex <> grid.Columns.Count - 1 Then Return False
-        If Rows Is Nothing OrElse Rows.Count = 0 Then Return False
+    End Sub
 
-        Return ReferenceEquals(current.Item, Rows(Rows.Count - 1))
+    ''' <summary>Toolbar: one register across two consecutive addresses, grouped.</summary>
+    Public Sub AddWordRegister()
 
-    End Function
+        AddRegister(WordRegisterRows)
+
+    End Sub
 
     ''' <summary>
-    ''' Adds a blank row at the bottom, carrying on the numbering from the row above
-    ''' it, and lands on Register Name so typing can continue straight away.
+    ''' Adds rows at the bottom, carrying on the numbering from the row above them,
+    ''' and lands on Register Address so the address can be corrected straight away -
+    ''' consecutive numbering is only a guess, and plenty of parts are not mapped
+    ''' that way.
+    '''
+    ''' More than one row means they are one register, so they are all given the same
+    ''' unused group tag.
     '''
     ''' Refused for a device whose address is -1: that means it has no register
     ''' addressing at all, so one row is all it can ever have.
     ''' </summary>
-    Private Sub AddRegisterRow()
+    Private Sub AddRegister(addresses As Integer)
 
-        If Rows Is Nothing Then Exit Sub
+        If Rows Is Nothing OrElse Editor Is Nothing Then Exit Sub
 
         If HasUnaddressedRow() Then
             Warn("This device has a register address of -1, which means it is not " &
@@ -462,14 +482,56 @@ Public Module DeviceEditorCore
             Exit Sub
         End If
 
-        Dim added As New DeviceRegisterRow With {.RegisterAddress = NextRegisterAddress()}
-        Rows.Add(added)
+        ' Whatever is half typed has to reach its row before the numbering below can
+        ' read the bottom address off it.
+        Editor.grd_Registers.CommitEdit(DataGridEditingUnit.Cell, True)
+        Editor.grd_Registers.CommitEdit(DataGridEditingUnit.Row, True)
+
+        Dim group As String = If(addresses > 1, NextGroupTag(), String.Empty)
+        Dim first As DeviceRegisterRow = Nothing
+
+        For added As Integer = 1 To addresses
+
+            Dim row As New DeviceRegisterRow With {
+                .RegisterAddress = NextRegisterAddress(),
+                .RegisterGroup = group
+            }
+
+            Rows.Add(row)
+            If first Is Nothing Then first = row
+
+        Next
+
+        If first Is Nothing Then Exit Sub
 
         ' The row's container does not exist until the grid has laid out again.
         Editor.Dispatcher.BeginInvoke(DispatcherPriority.Background,
-                                      New Action(Sub() FocusCell(added, RegisterNameColumn)))
+                                      New Action(Sub() FocusCell(first, RegisterAddressColumn)))
 
     End Sub
+
+    ''' <summary>
+    ''' The lowest counting number not already used as a group tag. Numbers because
+    ''' they never run out; the column takes whatever the user types over the top.
+    ''' </summary>
+    Private Function NextGroupTag() As String
+
+        Dim taken As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
+        For Each row As DeviceRegisterRow In Rows
+            Dim tag As String = If(row.RegisterGroup, String.Empty).Trim()
+            If tag.Length > 0 Then taken.Add(tag)
+        Next
+
+        Dim candidate As Integer = 1
+
+        While taken.Contains(candidate.ToString(CultureInfo.InvariantCulture))
+            candidate += 1
+        End While
+
+        Return candidate.ToString(CultureInfo.InvariantCulture)
+
+    End Function
 
     ''' <summary>True when any row carries the "not register addressed" marker.</summary>
     Private Function HasUnaddressedRow() As Boolean
@@ -501,16 +563,31 @@ Public Module DeviceEditorCore
     End Function
 
     ''' <summary>
-    ''' Removes the row the caret is on. The grid always keeps one row, so the last
-    ''' one is left alone - blank it out instead, blank rows are not saved.
+    ''' Removes the row the caret is on, and only that row: the other rows of its
+    ''' group stay where they are, keeping their tag. A group left with one row is
+    ''' a legal thing to have - it is how a 16 bit register is narrowed back to 8.
+    '''
+    ''' The grid always keeps one row, so the last one is left alone - blank it out
+    ''' instead, blank rows are not saved.
     ''' </summary>
-    Private Sub RemoveCurrentRow()
+    Public Sub DeleteCurrentRow()
 
-        If Rows Is Nothing OrElse Rows.Count <= 1 Then Exit Sub
+        If Rows Is Nothing OrElse Editor Is Nothing Then Exit Sub
+
+        If Rows.Count <= 1 Then
+            Warn("This is the only row left, and a device needs at least one." & vbCrLf & vbCrLf &
+                 "Clear the cells instead - a blank row is not saved.")
+            Exit Sub
+        End If
 
         Dim grid As DataGrid = Editor.grd_Registers
         Dim row As DeviceRegisterRow = TryCast(grid.CurrentCell.Item, DeviceRegisterRow)
-        If row Is Nothing Then Exit Sub
+
+        If row Is Nothing Then
+            Warn("Click a cell in the row you want to delete first." & vbCrLf & vbCrLf &
+                 "Delete works on the row the cursor is on.")
+            Exit Sub
+        End If
 
         Dim index As Integer = Rows.IndexOf(row)
         If index < 0 Then Exit Sub
@@ -533,27 +610,28 @@ Public Module DeviceEditorCore
     ' ========================================================================
     '  Sorting
     '
-    '  Only the Register Address column sorts, and it sorts as numbers - the
-    '  built-in sort would put "10" in front of "9" because the cell holds text.
+    '  Rows are sorted only when the toolbar button is pressed, and only ever by
+    '  register address, ascending - the same order the file is written in. The
+    '  grid's own column sorting is switched off in XAML: a header click that
+    '  rearranged the table would break up the groups on screen without the user
+    '  having asked for anything.
+    '
+    '  The sort is done here rather than by the grid because the cells hold text,
+    '  and a text sort puts "10" in front of "9".
     ' ========================================================================
 
-    Private Sub Registers_Sorting(sender As Object, e As DataGridSortingEventArgs)
+    ''' <summary>
+    ''' Toolbar: put the rows in register address order, which is also what repaints
+    ''' the group blocks - see the row colours section.
+    ''' </summary>
+    Public Sub SortRowsByAddress()
 
-        ' Always ours, never the grid's own string sort.
-        e.Handled = True
+        If Rows Is Nothing OrElse Editor Is Nothing Then Exit Sub
 
-        If Rows Is Nothing OrElse Editor.grd_Registers.Columns.Count = 0 Then Exit Sub
-        If Not ReferenceEquals(e.Column, Editor.grd_Registers.Columns(0)) Then Exit Sub
+        SortByRegisterAddress(False)
+        RefreshRowShades()
 
-        ' A second click on the header turns the order round. An unsorted column has
-        ' no direction at all, so the first click sorts ascending.
-        Dim descending As Boolean =
-            e.Column.SortDirection.HasValue AndAlso
-            e.Column.SortDirection.Value = ListSortDirection.Ascending
-
-        SortByRegisterAddress(descending)
-
-        e.Column.SortDirection = If(descending, ListSortDirection.Descending, ListSortDirection.Ascending)
+        AppCore.SetStatus("Registers sorted by address")
 
     End Sub
 
@@ -593,6 +671,54 @@ Public Module DeviceEditorCore
 
             Dim source As Integer = Rows.IndexOf(ordered(target))
             If source <> target Then Rows.Move(source, target)
+
+        Next
+
+        RefreshRowShades()
+
+    End Sub
+
+
+    ' ========================================================================
+    '  Row colours
+    '
+    '  Rows alternate between black and 90% black so one line can be told from
+    '  the next, but a group is one register and reads as one block: every row
+    '  carrying the same tag as the row above it keeps that row's colour, and the
+    '  alternation picks up again at the next register.
+    '
+    '  Worked out whenever the pattern could have changed: a row added or deleted,
+    '  a group tag typed in, or a sort. Not on every edit - nothing else in the
+    '  table has any say in the colours.
+    '
+    '  Only the eight data columns and Group are striped. Register Address keeps
+    '  its own uniform 75% black and takes only the ink. The colours themselves
+    '  live in the theme - Style_Grid_Cell_Data, Style_Grid_Cell_Group and
+    '  Style_Grid_Cell_Address all read ShadeIndex off the row.
+    ' ========================================================================
+
+    Private Sub RefreshRowShades()
+
+        If Rows Is Nothing Then Exit Sub
+
+        Dim shade As Integer = 0
+        Dim previous As String = Nothing
+
+        For index As Integer = 0 To Rows.Count - 1
+
+            Dim row As DeviceRegisterRow = Rows(index)
+            Dim tag As String = If(row.RegisterGroup, String.Empty).Trim()
+
+            ' A blank tag is never the same register as the row above, however
+            ' blank that row was.
+            Dim continues As Boolean =
+                index > 0 AndAlso tag.Length > 0 AndAlso
+                String.Equals(tag, previous, StringComparison.OrdinalIgnoreCase)
+
+            If index > 0 AndAlso Not continues Then shade = 1 - shade
+
+            row.ShadeIndex = shade
+            previous = tag
 
         Next
 
@@ -741,6 +867,7 @@ Public Module DeviceEditorCore
                     If register Is Nothing Then Continue For
                     Rows.Add(New DeviceRegisterRow With {
                         .RegisterAddress = register.RegisterAddress.ToString(CultureInfo.InvariantCulture),
+                        .RegisterGroup = If(register.RegisterGroup, String.Empty),
                         .RegisterName = If(register.RegisterName, String.Empty),
                         .D7 = If(register.D7, String.Empty),
                         .D6 = If(register.D6, String.Empty),
@@ -969,11 +1096,9 @@ Public Module DeviceEditorCore
         Editor.grd_Registers.CommitEdit(DataGridEditingUnit.Row, True)
 
         ' The file is always written in register address order, whatever order the
-        ' table happens to be showing.
+        ' table happens to be showing. This is also what puts a group's rows next to
+        ' each other, which is what the group check below reads.
         SortByRegisterAddress(False)
-        If Editor.grd_Registers.Columns.Count > 0 Then
-            Editor.grd_Registers.Columns(0).SortDirection = ListSortDirection.Ascending
-        End If
 
         ' Trimmed and upper cased, which is the only form a device name is stored in.
         Dim deviceName As String = Editor.txt_DeviceName.Text.Trim().ToUpperInvariant()
@@ -1101,8 +1226,20 @@ Public Module DeviceEditorCore
             Exit Sub
         End Try
 
-        AppCore.SetStatus("Saved " & Path.GetFileName(targetPath) &
-                          " (" & registers.Count.ToString(CultureInfo.InvariantCulture) & " registers)")
+        ' Every panel already showing this device is built again from what was just
+        ' written, so the edit is on screen the moment the editor closes.
+        Dim reloaded As Integer = DeviceActions.ReloadDeviceFile(targetPath)
+
+        Dim report As String =
+            "Saved " & Path.GetFileName(targetPath) &
+            " (" & registers.Count.ToString(CultureInfo.InvariantCulture) & " registers)"
+
+        If reloaded > 0 Then
+            report &= " - reloaded " & reloaded.ToString(CultureInfo.InvariantCulture) &
+                      If(reloaded = 1, " panel", " panels")
+        End If
+
+        AppCore.SetStatus(report)
 
         AllowClose = True
         Editor.DialogResult = True
@@ -1172,6 +1309,7 @@ Public Module DeviceEditorCore
 
             registers.Add(New DeviceRegisterData With {
                 .RegisterAddress = address,
+                .RegisterGroup = If(row.RegisterGroup, String.Empty).Trim(),
                 .RegisterName = If(row.RegisterName, String.Empty).Trim(),
                 .D7 = If(row.D7, String.Empty).Trim(),
                 .D6 = If(row.D6, String.Empty).Trim(),
@@ -1193,7 +1331,59 @@ Public Module DeviceEditorCore
             Return Nothing
         End If
 
+        If Not GroupsAreConsecutive(registers) Then Return Nothing
+
         Return registers
+
+    End Function
+
+    ''' <summary>
+    ''' Checks every group tag over. A group is one register spread across more than
+    ''' one address, so its rows have to sit on a run of consecutive addresses - a
+    ''' tag turning up again further up the map is two registers wearing one name,
+    ''' which is the one thing a group must not be.
+    '''
+    ''' How many rows share a tag is not checked: two is a 16 bit register, four is
+    ''' 32, and one is what a 16 bit register becomes when a row is deleted.
+    '''
+    ''' Reports the first problem it finds and returns False.
+    ''' </summary>
+    Private Function GroupsAreConsecutive(registers As List(Of DeviceRegisterData)) As Boolean
+
+        Dim addressesOfGroup As New Dictionary(Of String, List(Of Integer))(StringComparer.OrdinalIgnoreCase)
+
+        For Each register As DeviceRegisterData In registers
+
+            Dim tag As String = If(register.RegisterGroup, String.Empty).Trim()
+            If tag.Length = 0 Then Continue For
+
+            If Not addressesOfGroup.ContainsKey(tag) Then addressesOfGroup.Add(tag, New List(Of Integer))
+            addressesOfGroup(tag).Add(register.RegisterAddress)
+
+        Next
+
+        For Each pair As KeyValuePair(Of String, List(Of Integer)) In addressesOfGroup
+
+            Dim addresses As List(Of Integer) = pair.Value
+            addresses.Sort()
+
+            ' Addresses are already known to be unique, so a run with no gap in it
+            ' spans exactly as many numbers as it has rows.
+            Dim span As Integer = addresses(addresses.Count - 1) - addresses(0) + 1
+            If span = addresses.Count Then Continue For
+
+            Warn("Group """ & pair.Key & """ is on addresses that are not consecutive:" & vbCrLf & vbCrLf &
+                 "   " & String.Join(", ", addresses.Select(
+                     Function(address) address.ToString(CultureInfo.InvariantCulture))) & vbCrLf & vbCrLf &
+                 "A group is one register spread over neighbouring addresses. Either move " &
+                 "these rows onto a run with no gap in it, or give the ones that are a " &
+                 "different register a group of their own.")
+
+            Return False
+
+        Next
+
+        Return True
 
     End Function
 

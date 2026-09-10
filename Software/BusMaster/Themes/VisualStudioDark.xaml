@@ -51,6 +51,28 @@
          the loudest red in the window. -->
     <SolidColorBrush x:Key="Brush_Toolbar_Read"      Color="#FFE05C5C"/>
 
+    <!-- The four user signals, named by the number UserSignal is passed rather
+         than by the colour, because the number is what the code works in and the
+         colour is only how the user tells them apart. Standard red, green, blue
+         and yellow, in that order. -->
+    <SolidColorBrush x:Key="Brush_Signal_1"          Color="#FFE05C5C"/>
+    <SolidColorBrush x:Key="Brush_Signal_2"          Color="#FF90EE90"/>
+    <SolidColorBrush x:Key="Brush_Signal_3"          Color="#FF4C9CE8"/>
+    <SolidColorBrush x:Key="Brush_Signal_4"          Color="#FFFFD24A"/>
+
+    <!-- Target reset. Red is the line held and the part stopped, which is the
+         only state worth warning about; blue is running. The pulse button is
+         green at rest and goes red for the moment it is pressed, so it borrows
+         the held colour rather than defining a second red. -->
+    <SolidColorBrush x:Key="Brush_Target_Reset"      Color="#FFE05C5C"/>
+    <SolidColorBrush x:Key="Brush_Target_Running"    Color="#FF4C9CE8"/>
+    <SolidColorBrush x:Key="Brush_Target_Pulse"      Color="#FF90EE90"/>
+
+    <!-- How the probe drives the two bus lines. Open drain is what I2C is, so it
+         is the blue "this is normal" colour; push-pull is the bench-only mode. -->
+    <SolidColorBrush x:Key="Brush_Drive_OpenDrain"   Color="#FF4C9CE8"/>
+    <SolidColorBrush x:Key="Brush_Drive_PushPull"    Color="#FF90EE90"/>
+
     <!-- Delete on the toolbar. The same red as Read All, so "red" means one thing
          up there rather than two. -->
     <SolidColorBrush x:Key="Brush_Toolbar_Delete"    Color="#FFE05C5C"/>
@@ -149,7 +171,22 @@
     <SolidColorBrush x:Key="Brush_Grid_Address_Background" Color="#FF404040"/>  <!-- 75% black -->
     <SolidColorBrush x:Key="Brush_Grid_Address_Text"       Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="Brush_Grid_Data_Background"    Color="#FF000000"/>
+    <SolidColorBrush x:Key="Brush_Grid_Data_Alternate"     Color="#FF1A1A1A"/>  <!-- 90% black -->
     <SolidColorBrush x:Key="Brush_Grid_Data_Text"          Color="#FF9CDCFE"/>
+
+    <!-- The ink for Register Address and Group. Those two columns say where a
+         register lives rather than what is in it, so they change colour with the
+         stripe instead of staying one shade: yellow on the black rows, white on
+         the 90% ones. Address keeps its own uniform background, and gets the ink
+         anyway, which is what lines the two columns up with each other. -->
+    <SolidColorBrush x:Key="Brush_Grid_Row_Ink"            Color="#FFFFD24A"/>
+    <SolidColorBrush x:Key="Brush_Grid_Row_Ink_Alternate"  Color="#FFFFFFFF"/>
+
+    <!-- The two register widths the editor's toolbar can add. Green is 8 bit, blue
+         is 16 bit, and the same pair will name the wider registers everywhere else
+         once there is a control that shows them. -->
+    <SolidColorBrush x:Key="Brush_Register_Byte"           Color="#FF90EE90"/>
+    <SolidColorBrush x:Key="Brush_Register_Word"           Color="#FF4C9CE8"/>
 
     <SolidColorBrush x:Key="Brush_Text_Primary"      Color="#FFF1F1F1"/>
     <SolidColorBrush x:Key="Brush_Text_Secondary"    Color="#FFA0A0A0"/>
@@ -636,6 +673,273 @@
         </Setter>
     </Style>
 
+    <!-- One user signal. A checkbox drawn as a radio button: EA3A is the hollow
+         ring for low, E81D the ring with a dot in it for high, which is what a
+         signal level looks like on a schematic. Four of these sit side by side and
+         none of them excludes the others.
+
+         The colour comes off the button rather than out of this style, because
+         each of the four is a different one and the colour is the only thing
+         telling them apart. Nothing in here sets Foreground, so a local value on
+         the instance is free to. -->
+    <Style x:Key="Style_Toolbar_Signal_Toggle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="txt_Signal"
+                                   Text="&#xEA3A;"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontFamily="{TemplateBinding FontFamily}"
+                                   FontWeight="{TemplateBinding FontWeight}"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="txt_Signal" Property="Text" Value="&#xE81D;"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <!-- The ring itself is recoloured rather than the button's
+                             Foreground: each of these carries its colour as a local
+                             value, and a local value outranks a template trigger
+                             aimed at the same property. -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="txt_Signal" Property="Foreground"
+                                    Value="{StaticResource Brush_Text_Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Whether the target is held in reset. The glyph and the word beside it are
+         one control and always the same colour, so there is no reading of it that
+         has the icon saying one thing and the text another.
+
+         The word sits in a fixed width box in a fixed pitch font, centred: "in
+         RESET" and "RUNNING" are different lengths, and without that the glyph in
+         front of them would shift every time the state changed. -->
+    <Style x:Key="Style_Toolbar_Target_Toggle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Padding" Value="4,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Target_Running}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ToolTip" Value="Running - click to hold the target in reset"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="txt_Target_Glyph"
+                                       Text="&#xE964;"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontFamily="{StaticResource Font_Glyph}"
+                                       FontWeight="{StaticResource Weight_Glyph}"
+                                       FontSize="15"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="txt_Target_State"
+                                       Text="RUNNING"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Width="64"
+                                       Margin="4,0,0,0"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="txt_Target_State" Property="Text" Value="in RESET"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Target_Reset}"/>
+                            <Setter Property="ToolTip" Value="Held in reset - click to let the target run"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <!-- After the checked trigger, so a red "in RESET" still
+                             goes grey when there is no probe to hold anything. -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The reset pulse. Its own template rather than the plain toolbar button's,
+         because that one fills blue while it is pressed and the glyph is meant to
+         be red for exactly that moment - red on blue would read as neither. -->
+    <Style x:Key="Style_Toolbar_Pulse_Button" TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Target_Pulse}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <!-- Down is red, up is green again, and the button is only
+                             down for as long as it is held. -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Target_Reset}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A word sitting on the toolbar labelling the control beside it. Goes grey
+         with its group: a TextBlock has no disabled look of its own, so a block
+         that is switched off would otherwise be a row of dead controls under a
+         caption still in full white. -->
+    <Style x:Key="Style_Toolbar_Label" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource Brush_Text_Primary}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource Brush_Text_Disabled}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Whether the probe drives the bus lines both ways or only pulls them down.
+         Released is 0/Z - pull down or let go, which is what I2C is - and pressed
+         is 0/1. Same shape of control as the target's reset: a glyph and a word in
+         one colour, the word in a fixed width box so the glyph does not shift. -->
+    <Style x:Key="Style_Toolbar_Drive_Toggle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="Padding" Value="4,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Drive_OpenDrain}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ToolTip" Value="Open drain - the probe pulls the lines down and the pull-ups raise them. Click to drive both ways."/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="txt_Drive_Glyph"
+                                       Text="&#xECE7;"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontFamily="{StaticResource Font_Glyph}"
+                                       FontWeight="{StaticResource Weight_Glyph}"
+                                       FontSize="15"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="txt_Drive_State"
+                                       Text="0/Z"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Width="26"
+                                       Margin="4,0,0,0"
+                                       TextAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="txt_Drive_Glyph" Property="Text" Value="&#xECE9;"/>
+                            <Setter TargetName="txt_Drive_State" Property="Text" Value="0/1"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Drive_PushPull}"/>
+                            <Setter Property="ToolTip" Value="Push-pull - the probe drives both levels. Click to go back to open drain."/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background" Value="{StaticResource Brush_Item_Hover}"/>
+                            <Setter TargetName="bdr_Root" Property="BorderBrush" Value="{StaticResource Brush_Chrome_Border}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Text_Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The bus commands: the momentary button above, but carrying a glyph and a
+         word rather than a glyph alone, so it grows to whatever it says. Green
+         raised, red held, same as the pulse - they are all "do it now" buttons and
+         they should all feel the same under the finger. -->
+    <Style x:Key="Style_Toolbar_Bus_Button" TargetType="{x:Type Button}"
+           BasedOn="{StaticResource Style_Toolbar_Pulse_Button}">
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="Padding" Value="7,0"/>
+    </Style>
+
+    <!-- The two halves of a bus command's face. Neither sets Foreground: the
+         colour comes down from the button, which is what lets one trigger up there
+         turn the whole face red. -->
+    <Style x:Key="Style_Toolbar_Bus_Glyph" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="Style_Toolbar_Bus_Text" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
     <!-- A glyph button on a device panel's header. The toolbar button, sized down
          to sit in a header bar without stretching it. -->
     <Style x:Key="Style_Device_Action" TargetType="{x:Type Button}">
@@ -689,6 +993,33 @@
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{StaticResource Brush_Workspace_Action}"/>
+    </Style>
+
+    <!-- Device Editor: "8" or "16" in front of the chip glyph. Wider than a plain
+         glyph button because it carries both, and the width is the same for either
+         so the two sit level. The digits are drawn by the button's content, which
+         picks its own font - only the colour is set here, and it reaches the
+         digits by inheritance. -->
+    <Style x:Key="Style_Toolbar_Register_Button" TargetType="{x:Type Button}"
+           BasedOn="{StaticResource Style_Toolbar_Button}">
+        <Setter Property="Width" Value="44"/>
+        <Setter Property="Margin" Value="2,0"/>
+    </Style>
+
+    <!-- The digits in front of a chip glyph. -->
+    <Style x:Key="Style_Toolbar_Register_Width" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,3,0"/>
+    </Style>
+
+    <Style x:Key="Style_Toolbar_Register_Chip" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="{StaticResource Font_Glyph}"/>
+        <Setter Property="FontWeight" Value="{StaticResource Weight_Glyph}"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="Style_Toolbar_Separator" TargetType="{x:Type Separator}">
@@ -1035,16 +1366,47 @@
         </Setter>
     </Style>
 
+    <!-- The background stays put and only the ink follows the stripe, so the
+         address column reads as one solid strip down the left with the register
+         widths marked out in it. -->
     <Style x:Key="Style_Grid_Cell_Address" TargetType="{x:Type DataGridCell}"
            BasedOn="{StaticResource Style_Grid_Cell_Base}">
         <Setter Property="Background" Value="{StaticResource Brush_Grid_Address_Background}"/>
-        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Address_Text}"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShadeIndex}" Value="1">
+                <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
+    <!-- The stripe is drawn on the cell rather than the row, because the Register
+         Address column keeps its own uniform colour and must not be striped with
+         the rest. Which stripe a row gets is not the row's position but its
+         ShadeIndex, worked out in DeviceEditorCore so that every row of a group
+         shares one colour. -->
     <Style x:Key="Style_Grid_Cell_Data" TargetType="{x:Type DataGridCell}"
            BasedOn="{StaticResource Style_Grid_Cell_Base}">
         <Setter Property="Background" Value="{StaticResource Brush_Grid_Data_Background}"/>
         <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Data_Text}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShadeIndex}" Value="1">
+                <Setter Property="Background" Value="{StaticResource Brush_Grid_Data_Alternate}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Group takes the same ink as Register Address on top of the striped
+         background, so the pair of columns that describe where the register lives
+         are the pair that change colour together. -->
+    <Style x:Key="Style_Grid_Cell_Group" TargetType="{x:Type DataGridCell}"
+           BasedOn="{StaticResource Style_Grid_Cell_Data}">
+        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShadeIndex}" Value="1">
+                <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Read-only presentation inside a cell. -->
@@ -1055,24 +1417,56 @@
 
     <!-- The editor that appears when a cell is opened. Explicit styles do not pick
          up the implicit TextBox style, so both set every colour they need. -->
+    <!-- MaxLength is set here rather than on the column: DataGridTextColumn has no
+         such property, the editing TextBox is the only thing that does. Four
+         characters holds "-1" and "255" with room to retype. -->
     <Style x:Key="Style_Grid_Edit_Address" TargetType="{x:Type TextBox}">
+        <Setter Property="MaxLength" Value="4"/>
         <Setter Property="Background" Value="{StaticResource Brush_Grid_Address_Background}"/>
-        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Address_Text}"/>
-        <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Address_Text}"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Row_Ink}"/>
         <Setter Property="SelectionBrush" Value="{StaticResource Brush_Accent}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="5,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <!-- The editing box carries the row's ink as well, or the text would change
+             colour the moment the cell was opened. Its DataContext is the row, so
+             it can read ShadeIndex just as the cell does. -->
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShadeIndex}" Value="1">
+                <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+                <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
+    <!-- Transparent, not black: the cell underneath carries the row's stripe, and a
+         cell that went black the moment it was opened would break the group block
+         while the user was typing in it. -->
     <Style x:Key="Style_Grid_Edit_Data" TargetType="{x:Type TextBox}">
-        <Setter Property="Background" Value="{StaticResource Brush_Grid_Data_Background}"/>
+        <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Data_Text}"/>
         <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Data_Text}"/>
         <Setter Property="SelectionBrush" Value="{StaticResource Brush_Accent}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="5,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+
+    <!-- Group tags are short by nature - a number or a letter - and a long one
+         would only be a typo. -->
+    <Style x:Key="Style_Grid_Edit_Group" TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource Style_Grid_Edit_Data}">
+        <Setter Property="MaxLength" Value="4"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Row_Ink}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ShadeIndex}" Value="1">
+                <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+                <Setter Property="CaretBrush" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
 
