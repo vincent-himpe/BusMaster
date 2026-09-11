@@ -105,9 +105,8 @@ Public Module WorkspaceCore
             Return True
 
         Catch ex As Exception
-            MessageBox.Show(AppCore.MainShell,
-                            "The views could not be saved:" & vbCrLf & vbCrLf & ex.Message,
-                            DialogTitle, MessageBoxButton.OK, MessageBoxImage.Error)
+            MessagePrompt.ShowError(AppCore.MainShell, DialogTitle,
+                                    "The views could not be saved:" & vbCrLf & vbCrLf & ex.Message)
             Return False
         End Try
 
@@ -535,10 +534,9 @@ Public Module WorkspaceCore
 
         If WorkspacePath.Length > 0 Then Return True
 
-        MessageBox.Show(AppCore.MainShell,
-                        "Views are kept beside the project file, so the project has to be " &
-                        "saved before one can be made.",
-                        DialogTitle, MessageBoxButton.OK, MessageBoxImage.Information)
+        MessagePrompt.ShowInfo(AppCore.MainShell, DialogTitle,
+                               "Views are kept beside the project file, so the project has to be " &
+                               "saved before one can be made.")
 
         AppCore.SetStatus("Save the project before saving a view")
 

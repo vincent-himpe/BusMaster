@@ -31,6 +31,13 @@
 '  One window to an edge. Sticking a second window to an edge that is taken
 '  releases the first, which is left where it is rather than being moved - the
 '  user asked for the new one to go there, not for the old one to go anywhere.
+'
+'  Two things are watched on a tool window, and the difference matters. The
+'  window is placed on WM_EXITSIZEMOVE, when the mouse comes up, because snapping
+'  a window that is still being held fights the hand holding it. The cue drawn on
+'  the main window - see Modules\SnapHint.vb - is driven from WM_MOVING and
+'  WM_SIZING instead, all the way through the drag, because its whole job is to
+'  say what letting go would do before it is done.
 ' ============================================================================
 
 Imports System.Runtime.InteropServices
@@ -152,15 +159,27 @@ Public Module WindowSnap
     End Function
 
     ''' <summary>
-    ''' A tool window has finished being dragged or resized. Only then is it worth
-    ''' deciding anything: snapping while the mouse is still down fights the hand
-    ''' holding it, and a window that jumps out from under the pointer is worse
-    ''' than one that does not snap at all.
+    ''' A tool window is being dragged or resized, or has just been let go of.
+    '''
+    ''' Nothing is moved until the mouse comes up: snapping while it is still down
+    ''' fights the hand holding it, and a window that jumps out from under the
+    ''' pointer is worse than one that does not snap at all. What does happen
+    ''' during the drag is the cue on the main window, which has to be live or it
+    ''' is telling the user nothing they could act on.
     ''' </summary>
     Private Function ToolMessage(handle As IntPtr, message As Integer, wparam As IntPtr,
                                  lparam As IntPtr, ByRef handled As Boolean) As IntPtr
 
-        If message = WM_EXITSIZEMOVE Then Settle(handle)
+        Select Case message
+
+            Case WM_MOVING, WM_SIZING
+                Preview(handle, lparam)
+
+            Case WM_EXITSIZEMOVE
+                SnapHint.Hide()
+                Settle(handle)
+
+        End Select
 
         Return IntPtr.Zero
 
@@ -170,6 +189,35 @@ Public Module WindowSnap
     ' ========================================================================
     '  Deciding
     ' ========================================================================
+
+    ''' <summary>
+    ''' Says on the main window what letting go here would do. Called on every
+    ''' mouse move of a drag, and on every step of a resize, so it does as little
+    ''' as it can: read two rectangles, ask the same question Settle will ask, and
+    ''' hand the answer to SnapHint, which draws nothing new if nothing changed.
+    ''' </summary>
+    Private Sub Preview(handle As IntPtr, lparam As IntPtr)
+
+        If Shell Is Nothing Then Exit Sub
+        If lparam = IntPtr.Zero Then Exit Sub
+
+        Dim state As SnapState = StateOf(handle)
+        If state Is Nothing Then Exit Sub
+
+        ' Where the window is about to be, not where it is. Both messages arrive
+        ' before the move with the rectangle Windows is proposing, so reading the
+        ' window itself here would be a frame behind the pointer.
+        Dim toolRect As RECT = Marshal.PtrToStructure(Of RECT)(lparam)
+
+        Dim shellRect As RECT
+        If Not GetWindowRect(HandleOf(Shell), shellRect) Then Exit Sub
+
+        Dim edge As SnapEdge = NearestEdge(toolRect, shellRect,
+                                           VisualTreeHelper.GetDpi(state.Window).DpiScaleX)
+
+        SnapHint.Show(Shell, edge)
+
+    End Sub
 
     ''' <summary>
     ''' Works out where the tool window that was just let go of belongs now, and
@@ -371,6 +419,8 @@ Public Module WindowSnap
     '  Win32
     ' ========================================================================
 
+    Private Const WM_SIZING As Integer = &H214
+    Private Const WM_MOVING As Integer = &H216
     Private Const WM_EXITSIZEMOVE As Integer = &H232
     Private Const WM_WINDOWPOSCHANGED As Integer = &H47
 

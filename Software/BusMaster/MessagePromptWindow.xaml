@@ -6,8 +6,9 @@
         xmlns:local="clr-namespace:BusMaster"
         mc:Ignorable="d"
         Title="BusMaster"
-        SizeToContent="Height"
-        Width="470"
+        SizeToContent="WidthAndHeight"
+        MinWidth="470"
+        MaxWidth="760"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner"
@@ -19,14 +20,31 @@
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
 
+    <!-- The box is as wide as it has to be, between those two limits. Most messages
+         are a sentence or two and come out at the minimum, which is what keeps them
+         all looking alike; the F1 help is thirty lines laid out in sections and
+         would be shredded by wrapping, so it takes the room it needs instead. The
+         maximum is there because a line of text much wider than this stops being
+         readable - past it, a long message wraps after all. -->
+
     <Grid Margin="16">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+
+            <!-- Star, not Auto, and that is what makes the scroller work. An Auto
+                 row is given its full desired height first, so on a message taller
+                 than the box the text would take the lot, the ScrollViewer would
+                 never be squeezed - and so would never scroll - and the button row
+                 below would be pushed off the bottom of the window. Star takes
+                 what is left after the buttons have had theirs. While the window
+                 is free to grow, star measures the same as Auto, so a message that
+                 fits is laid out exactly as before. -->
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+
         </Grid.RowDefinitions>
 
         <!-- Which of the four faces this is: something worth knowing, something
@@ -45,14 +63,25 @@
                    Foreground="{StaticResource Brush_Message_Info}"
                    Text="&#xE946;"/>
 
-        <!-- A TextBlock, not a Label: a Label runs the string through AccessText,
-             which would swallow any underscore in the message. -->
-        <TextBlock x:Name="lbl_Message"
-                   Grid.Row="0" Grid.Column="1"
-                   VerticalAlignment="Center"
-                   TextWrapping="Wrap"
-                   Foreground="{StaticResource Brush_Text_Primary}"
-                   Text="Message"/>
+        <!-- The scroller earns its keep once, on the F1 help: the box cannot be
+             resized, so a message taller than the screen would have a bottom the
+             user could never reach. It adds nothing to the look of a message that
+             fits - no bar is drawn unless there is something to scroll - and
+             MessagePrompt is what stops the window growing past the work area. -->
+        <ScrollViewer Grid.Row="0" Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalAlignment="Center"
+                      Padding="0,0,4,0">
+
+            <!-- A TextBlock, not a Label: a Label runs the string through
+                 AccessText, which would swallow any underscore in the message. -->
+            <TextBlock x:Name="lbl_Message"
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource Brush_Text_Primary}"
+                       Text="Message"/>
+
+        </ScrollViewer>
 
         <!-- Every button the box can offer, in the order they are read. Which of
              them are on show is what the mode decides; MessagePrompt.Arrange hides

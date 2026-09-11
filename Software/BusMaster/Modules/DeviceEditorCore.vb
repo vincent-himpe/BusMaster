@@ -1492,9 +1492,14 @@ Public Module DeviceEditorCore
     '  Small helpers
     ' ========================================================================
 
+    ''' <summary>
+    ''' Every refusal the editor makes comes through here, which is why they all
+    ''' look alike and why theming them was one edit. A warning rather than an
+    ''' error: nothing has failed, the file simply cannot be written as it stands.
+    ''' </summary>
     Private Sub Warn(message As String)
 
-        MessageBox.Show(Editor, message, DialogTitle, MessageBoxButton.OK, MessageBoxImage.Warning)
+        MessagePrompt.ShowWarning(Editor, DialogTitle, message)
 
     End Sub
 

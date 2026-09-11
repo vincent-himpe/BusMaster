@@ -548,8 +548,8 @@ Public Module EventLogCore
         If entered.Length = 0 Then Exit Sub
 
         If entered.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 Then
-            MessageBox.Show(Log, "That name contains characters that cannot be used in a file name.",
-                            WindowTitle, MessageBoxButton.OK, MessageBoxImage.Warning)
+            MessagePrompt.ShowWarning(Log, WindowTitle,
+                                      "That name contains characters that cannot be used in a file name.")
             Exit Sub
         End If
 
@@ -599,8 +599,8 @@ Public Module EventLogCore
             AppCore.SetStatus("Saved " & Path.GetFileName(filePath))
 
         Catch ex As Exception
-            MessageBox.Show(Log, "The log could not be saved:" & vbCrLf & vbCrLf & ex.Message,
-                            WindowTitle, MessageBoxButton.OK, MessageBoxImage.Error)
+            MessagePrompt.ShowError(Log, WindowTitle,
+                                    "The log could not be saved:" & vbCrLf & vbCrLf & ex.Message)
         End Try
 
     End Sub
@@ -643,8 +643,8 @@ Public Module EventLogCore
             AppCore.SetStatus("Loaded " & Path.GetFileName(filePath))
 
         Catch ex As Exception
-            MessageBox.Show(Log, "The log could not be read:" & vbCrLf & vbCrLf & ex.Message,
-                            WindowTitle, MessageBoxButton.OK, MessageBoxImage.Error)
+            MessagePrompt.ShowError(Log, WindowTitle,
+                                    "The log could not be read:" & vbCrLf & vbCrLf & ex.Message)
         End Try
 
     End Sub

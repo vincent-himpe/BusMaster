@@ -131,6 +131,12 @@ Public Module MessagePrompt
 
         If owner IsNot Nothing Then dialog.Owner = owner
 
+        ' The box sizes itself to what it has been given, and the F1 help is long
+        ' enough to reach past the bottom of a laptop screen. Capped here rather
+        ' than in the XAML because it depends on the screen the program is on, and
+        ' the message then scrolls inside the box instead of falling off it.
+        dialog.MaxHeight = Math.Max(SystemParameters.WorkArea.Height - 80, 240)
+
         dialog.Title = If(title, String.Empty)
         dialog.lbl_Message.Text = If(message, String.Empty)
         dialog.lbl_Icon.Text = glyph

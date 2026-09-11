@@ -970,7 +970,7 @@ Public Module AppCore
             "Settings, options and the recent project list are kept in:" & vbCrLf &
             AppSettings.SettingsFilePath
 
-        MessageBox.Show(Shell, text, AppTitle & " Help", MessageBoxButton.OK, MessageBoxImage.Information)
+        MessagePrompt.ShowInfo(Shell, AppTitle & " Help", text)
         SetStatus("Help shown")
 
     End Sub
@@ -1050,9 +1050,8 @@ Public Module AppCore
             AppSettings.RemoveRecentProject(projectPath)
             RefreshRecentMenu()
             SetStatus("Project not found - " & projectPath)
-            MessageBox.Show(Shell,
-                            "This project file no longer exists:" & vbCrLf & vbCrLf & projectPath,
-                            AppTitle, MessageBoxButton.OK, MessageBoxImage.Warning)
+            MessagePrompt.ShowWarning(Shell, AppTitle,
+                                      "This project file no longer exists:" & vbCrLf & vbCrLf & projectPath)
             Exit Sub
         End If
 
@@ -1081,9 +1080,8 @@ Public Module AppCore
 
         Catch ex As Exception
             SetStatus("Open failed - " & ex.Message)
-            MessageBox.Show(Shell,
-                            "The project could not be opened:" & vbCrLf & vbCrLf & ex.Message,
-                            AppTitle, MessageBoxButton.OK, MessageBoxImage.Error)
+            MessagePrompt.ShowError(Shell, AppTitle,
+                                    "The project could not be opened:" & vbCrLf & vbCrLf & ex.Message)
         End Try
 
     End Sub
@@ -1136,9 +1134,8 @@ Public Module AppCore
 
         Catch ex As Exception
             SetStatus("Save failed - " & ex.Message)
-            MessageBox.Show(Shell,
-                            "The project could not be saved:" & vbCrLf & vbCrLf & ex.Message,
-                            AppTitle, MessageBoxButton.OK, MessageBoxImage.Error)
+            MessagePrompt.ShowError(Shell, AppTitle,
+                                    "The project could not be saved:" & vbCrLf & vbCrLf & ex.Message)
             Return False
         End Try
 

@@ -175,6 +175,14 @@
          already disabled; this is what makes them look it. -->
     <SolidColorBrush x:Key="Brush_Modal_Shade"             Color="#66000000"/>
 
+    <!-- Laid over the main window while a tool window is being dragged near
+         enough to one of its edges to stick to it. Lighter than the modal shade
+         on purpose: that one means stop, this one means carry on, you are nearly
+         there. The edge colour outlines the window, draws the bar on the side
+         that will take it, and is faded out to nothing for the glow. -->
+    <SolidColorBrush x:Key="Brush_Snap_Shade"              Color="#44000000"/>
+    <SolidColorBrush x:Key="Brush_Snap_Edge"               Color="#FF9CDCFE"/>  <!-- light blue -->
+
     <!-- The decoded I2C address readout beside Base Address. -->
     <SolidColorBrush x:Key="Brush_Address_Good"            Color="#FF3FE06B"/>  <!-- bright green -->
     <SolidColorBrush x:Key="Brush_Address_Bad"             Color="#FFE05C5C"/>
