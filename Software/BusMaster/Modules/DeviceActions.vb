@@ -129,7 +129,15 @@ Public Module DeviceActions
         Dim editor As New DeviceEditorWindow(devicefile, mode)
         editor.Owner = AppCore.MainShell
 
-        Dim saved As Boolean? = editor.ShowDialog()
+        ModalShade.Cover(editor)
+
+        Dim saved As Boolean?
+
+        Try
+            saved = editor.ShowDialog()
+        Finally
+            ModalShade.Uncover()
+        End Try
 
         If Not saved.GetValueOrDefault() Then AppCore.SetStatus("Device Editor closed without saving")
 

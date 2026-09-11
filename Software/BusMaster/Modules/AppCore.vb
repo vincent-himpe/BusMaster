@@ -1,4 +1,4 @@
-' ============================================================================
+﻿' ============================================================================
 '  Modules\AppCore.vb
 '
 '  All of the application's active code. The window's event handlers do nothing
@@ -101,6 +101,9 @@ Public Module AppCore
         RefreshValueDisplayControls()
         RefreshProbePorts()
 
+        ' The tool windows stick to the edges of this one - see Modules\WindowSnap.vb.
+        WindowSnap.Attach(Shell)
+
         ' Nothing is connected yet, so this is what greys the bus and target blocks
         ' out to start with.
         RefreshProbeConnection()
@@ -169,6 +172,7 @@ Public Module AppCore
         If LogWindow IsNot Nothing Then Exit Sub
 
         LogWindow = New EventLogWindow With {.Owner = Shell}
+        WindowSnap.Follow(LogWindow)
 
         ' Show and hide once: a window's Loaded event, and therefore its template and
         ' its grid, do not exist until it has been shown at least once.
@@ -185,6 +189,7 @@ Public Module AppCore
         If CommandsWindow IsNot Nothing Then Exit Sub
 
         CommandsWindow = New CommandWindow With {.Owner = Shell}
+        WindowSnap.Follow(CommandsWindow)
 
         CommandsWindow.Show()
         CommandsWindow.Hide()
@@ -199,6 +204,7 @@ Public Module AppCore
         If TerminalsWindow IsNot Nothing Then Exit Sub
 
         TerminalsWindow = New TerminalWindow With {.Owner = Shell}
+        WindowSnap.Follow(TerminalsWindow)
 
         TerminalsWindow.Show()
         TerminalsWindow.Hide()
@@ -230,12 +236,9 @@ Public Module AppCore
     Public Sub HandleWindowClosing(e As CancelEventArgs)
 
         If AppSettings.Current.ConfirmOnExit Then
-            Dim answer As MessageBoxResult = MessageBox.Show(
-                Shell,
-                "Close " & AppTitle & "?",
-                AppTitle,
-                MessageBoxButton.OKCancel,
-                MessageBoxImage.Question)
+            Dim answer As MessageBoxResult = MessagePrompt.AskOkCancel(
+                Shell, AppTitle,
+                "Close " & AppTitle & "?")
 
             If answer <> MessageBoxResult.OK Then
                 e.Cancel = True
@@ -1229,12 +1232,9 @@ Public Module AppCore
         ' workspace before any project exists, and those changes are worth keeping.
         If Not IsModified Then Return True
 
-        Dim answer As MessageBoxResult = MessageBox.Show(
-            Shell,
-            "Save changes to " & ProjectDisplayName() & " first?",
-            AppTitle,
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Question)
+        Dim answer As MessageBoxResult = MessagePrompt.AskYesNoCancel(
+            Shell, AppTitle,
+            "Save changes to " & ProjectDisplayName() & " first?")
 
         Select Case answer
             Case MessageBoxResult.Yes

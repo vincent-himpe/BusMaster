@@ -40,6 +40,13 @@ End Class
 Public Class DeviceRegisterData
     Public Property RegisterAddress As Integer = 0
     Public Property RegisterGroup As String = String.Empty
+
+    ''' <summary>
+    ''' Marks a register as one worth putting in front of the user. Read back
+    ''' case-insensitively, so a file that spells the key "quickviz" loads too.
+    ''' </summary>
+    Public Property QuickViz As Boolean = False
+
     Public Property RegisterName As String = String.Empty
     Public Property D7 As String = String.Empty
     Public Property D6 As String = String.Empty
@@ -68,6 +75,7 @@ Public Class DeviceRegisterRow
 
     Private m_RegisterAddress As String = String.Empty
     Private m_RegisterGroup As String = String.Empty
+    Private m_QuickViz As Boolean = False
     Private m_RegisterName As String = String.Empty
     Private m_ShadeIndex As Integer = 0
     Private m_D7 As String = String.Empty
@@ -98,6 +106,22 @@ Public Class DeviceRegisterRow
         End Get
         Set(value As String)
             Assign(m_RegisterGroup, value, NameOf(RegisterGroup))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The QuickViz flag. A tick box rather than something typed in, so it is a
+    ''' Boolean and not text like the rest of the row.
+    ''' </summary>
+    Public Property QuickViz As Boolean
+        Get
+            Return m_QuickViz
+        End Get
+        Set(value As Boolean)
+            If m_QuickViz = value Then Exit Property
+
+            m_QuickViz = value
+            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(QuickViz)))
         End Set
     End Property
 

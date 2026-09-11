@@ -42,6 +42,10 @@ Class DeviceEditorWindow
         DeviceEditorCore.Attach(Me)
     End Sub
 
+    Private Sub Window_KeyDown(sender As Object, e As KeyEventArgs)
+        DeviceEditorCore.HandleWindowKey(e)
+    End Sub
+
     Private Sub Window_Closing(sender As Object, e As CancelEventArgs)
         DeviceEditorCore.HandleWindowClosing(e)
     End Sub

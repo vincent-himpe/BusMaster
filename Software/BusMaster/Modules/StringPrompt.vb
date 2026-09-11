@@ -31,7 +31,13 @@ Public Module StringPrompt
         dialog.lbl_Prompt.Text = If(prompt, String.Empty)
         dialog.txt_Value.Text = If(startingValue, String.Empty)
 
-        If dialog.ShowDialog().GetValueOrDefault() Then Return dialog.txt_Value.Text
+        ModalShade.Cover(dialog)
+
+        Try
+            If dialog.ShowDialog().GetValueOrDefault() Then Return dialog.txt_Value.Text
+        Finally
+            ModalShade.Uncover()
+        End Try
 
         Return Nothing
 

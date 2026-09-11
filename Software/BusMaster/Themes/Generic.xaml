@@ -126,6 +126,14 @@
                             </CheckBox>
                         </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Hidden, not collapsed: the cell keeps its width so every
+                             register in a panel stays the same shape, whether or not
+                             it is the one carrying the group's switch. -->
+                        <Trigger Property="ShowVisibilitySwitch" Value="False">
+                            <Setter TargetName="PART_Lock" Property="Visibility" Value="Hidden"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

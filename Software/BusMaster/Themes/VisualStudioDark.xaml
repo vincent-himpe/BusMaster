@@ -163,6 +163,18 @@
     <SolidColorBrush x:Key="Brush_Field_Rename_Background" Color="#FFCF6A6A"/>  <!-- light red -->
     <SolidColorBrush x:Key="Brush_Field_Rename_Text"       Color="#FFFFFFFF"/>
 
+    <!-- The four faces of a message box: something worth knowing, something worth
+         thinking twice about, something that did not happen, and something only
+         the user can decide. Standard blue, yellow, red and green. -->
+    <SolidColorBrush x:Key="Brush_Message_Info"            Color="#FF4C9CE8"/>
+    <SolidColorBrush x:Key="Brush_Message_Warning"         Color="#FFFFD24A"/>
+    <SolidColorBrush x:Key="Brush_Message_Error"           Color="#FFE05C5C"/>
+    <SolidColorBrush x:Key="Brush_Message_Question"        Color="#FF90EE90"/>
+
+    <!-- Laid over every window that is waiting while a dialog is up. They are
+         already disabled; this is what makes them look it. -->
+    <SolidColorBrush x:Key="Brush_Modal_Shade"             Color="#66000000"/>
+
     <!-- The decoded I2C address readout beside Base Address. -->
     <SolidColorBrush x:Key="Brush_Address_Good"            Color="#FF3FE06B"/>  <!-- bright green -->
     <SolidColorBrush x:Key="Brush_Address_Bad"             Color="#FFE05C5C"/>
@@ -187,6 +199,12 @@
          once there is a control that shows them. -->
     <SolidColorBrush x:Key="Brush_Register_Byte"           Color="#FF90EE90"/>
     <SolidColorBrush x:Key="Brush_Register_Word"           Color="#FF4C9CE8"/>
+
+    <!-- The box drawn round a group of registers on a device panel. Two colours
+         used alternately down the panel so neighbouring groups can be told apart;
+         neither one means anything on its own. -->
+    <SolidColorBrush x:Key="Brush_Group_Box_1"             Color="#FF4C9CE8"/>
+    <SolidColorBrush x:Key="Brush_Group_Box_2"             Color="#FFFFD24A"/>
 
     <SolidColorBrush x:Key="Brush_Text_Primary"      Color="#FFF1F1F1"/>
     <SolidColorBrush x:Key="Brush_Text_Secondary"    Color="#FFA0A0A0"/>
@@ -1022,6 +1040,22 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
+    <!-- A divider between entries in a drop-down. Horizontal, unlike the toolbar's,
+         and it has to carry its own colour: the framework default is a light line
+         meant for a light theme. -->
+    <Style x:Key="Style_List_Separator" TargetType="{x:Type Separator}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Border Height="1"
+                            Margin="0,2"
+                            Background="{StaticResource Brush_Chrome_Border}"
+                            SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="Style_Toolbar_Separator" TargetType="{x:Type Separator}">
         <Setter Property="Template">
             <Setter.Value>
@@ -1407,6 +1441,51 @@
                 <Setter Property="Foreground" Value="{StaticResource Brush_Grid_Row_Ink_Alternate}"/>
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- The QuickViz tick in the Device Editor. A ToggleButton rather than a
+         DataGridCheckBoxColumn, so one click sets it - a check box column wants the
+         cell put into edit first, which is two clicks for a flag.
+
+         ECCA is the empty ring and ECCB the filled one; white for off and blue for
+         on, the same language as the visibility switch on a register, which is why
+         it borrows those two brushes rather than defining a second pair. -->
+    <Style x:Key="Style_Grid_QuickViz_Toggle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush_Register_Hidden}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ToolTip" Value="QuickViz - mark this register as one to put in front of the user"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="bdr_Root"
+                            Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="txt_Quick"
+                                   Text="&#xECCA;"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontFamily="{StaticResource Font_Glyph}"
+                                   FontWeight="{StaticResource Weight_Glyph}"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="txt_Quick" Property="Text" Value="&#xECCB;"/>
+                            <Setter Property="Foreground" Value="{StaticResource Brush_Register_Shown}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bdr_Root" Property="Background"
+                                    Value="{StaticResource Brush_Item_Hover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Read-only presentation inside a cell. -->

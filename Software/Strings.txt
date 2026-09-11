@@ -1,0 +1,1134 @@
+BusMaster - every string the program shows the user
+Generated 2026-09-10
+
+HOW TO USE THIS FILE
+
+Each entry starts with a marker line:
+
+    #[042] MainWindow.xaml:196  tooltip on tlbr_Open
+
+Everything after that line, up to the next #[nnn], is the text as it
+appears on screen. Change those lines and hand the file back; the #[nnn]
+markers are how the changes get put back in the source, so leave them
+alone. An entry you do not touch stays as it is.
+
+{1}, {2} and so on are places where the program drops in a value - a file
+name, a count, an address. Keep them, and keep them in an order that still
+reads properly.
+
+[glyph U+E74E] is an icon drawn in the text. Keep those too.
+
+A blank line immediately before the next #[nnn] is the separator, not part
+of the text. Blank lines inside an entry are real - they are paragraph
+breaks in a message box.
+
+An underscore in a menu or button caption marks its Alt key: "_File" is
+Alt+F. Two in a row prints one underscore.
+
+========================================================================
+
+
+========================================================================
+  MAIN WINDOW
+========================================================================
+
+#[001] MainWindow.xaml:8  title on Window
+BusMaster
+
+#[002] MainWindow.xaml:39  header on mnu_File
+_File
+
+#[003] MainWindow.xaml:42  header on mnu_File_New_Project
+_New Project
+
+#[004] MainWindow.xaml:47  header on mnu_File_Open_Project
+_Open Project...
+
+#[005] MainWindow.xaml:52  header on mnu_File_Save_Project
+_Save Project
+
+#[006] MainWindow.xaml:57  header on mnu_File_Save_Project_As
+Save Project _As...
+
+#[007] MainWindow.xaml:66  header on mnu_File_Recently_Used
+Recently Used
+
+#[008] MainWindow.xaml:76  header on mnu_File_Recent_Empty
+(no recent projects)
+
+#[009] MainWindow.xaml:83  header on mnu_File_Options
+O_ptions...
+
+#[010] MainWindow.xaml:89  header on mnu_File_Exit
+E_xit
+
+#[011] MainWindow.xaml:95  header on mnu_View
+_View
+
+#[012] MainWindow.xaml:98  header on mnu_View_Decimal
+_Decimal
+
+#[013] MainWindow.xaml:103  header on mnu_View_Hexadecimal
+_Hexadecimal
+
+#[014] MainWindow.xaml:109  header on mnu_Device
+_Device
+
+#[015] MainWindow.xaml:114  header on mnu_Device_Add_Device
+_Add Device...
+
+#[016] MainWindow.xaml:119  header on mnu_Bus
+_Bus
+
+#[017] MainWindow.xaml:122  header on mnu_Bus_Scan_Bus
+_Scan Bus
+
+#[018] MainWindow.xaml:126  header on mnu_Bus_Poll_Bus
+_Poll Bus
+
+#[019] MainWindow.xaml:130  header on mnu_Bus_Reset_Bus
+_Reset Bus
+
+#[020] MainWindow.xaml:135  header on mnu_Tools
+_Tools
+
+#[021] MainWindow.xaml:138  header on mnu_Tools_Create_Device
+_Create Device...
+
+#[022] MainWindow.xaml:142  header on mnu_Tools_Edit_Device
+_Edit Device...
+
+#[023] MainWindow.xaml:146  header on mnu_Tools_Clone_Device
+C_lone Device...
+
+#[024] MainWindow.xaml:152  header on mnu_Tools_Show_Log
+Show _Log
+
+#[025] MainWindow.xaml:156  header on mnu_Tools_Show_Command
+Show Co_mmand
+
+#[026] MainWindow.xaml:160  header on mnu_Tools_Show_Terminal
+Show _Terminal
+
+#[027] MainWindow.xaml:166  header on mnu_Tools_Show_Config_Files
+Show Config Files
+
+#[028] MainWindow.xaml:170  header on mnu_Tools_Show_Dev_Files
+Show Dev Files
+
+#[029] MainWindow.xaml:174  header on mnu_Tools_Show_Project_Files
+Show Project Files
+
+#[030] MainWindow.xaml:206  text on tlbr_Probe_Label
+Probe
+
+#[031] MainWindow.xaml:214  tooltip on tlbr_Probe_Rescan
+Look for a BusMaster probe on the USB bus
+
+#[032] MainWindow.xaml:225  tooltip on tlbr_Probe_List
+Serial port the probe is on
+
+#[033] MainWindow.xaml:249  text on tlbr_Bus_Label
+Bus:
+
+#[034] MainWindow.xaml:253  tooltip on tlbr_Bus_Release
+Let go of the bus - stop driving SCL and SDA
+
+#[035] MainWindow.xaml:257  text on TextBlock
+Release
+
+#[036] MainWindow.xaml:263  tooltip on tlbr_Bus_Clear
+Clock a stuck slave off the bus and leave it idle
+
+#[037] MainWindow.xaml:267  text on TextBlock
+Clear
+
+#[038] MainWindow.xaml:297  tooltip on tlbr_Signal_1
+User signal 1
+
+#[039] MainWindow.xaml:303  tooltip on tlbr_Signal_2
+User signal 2
+
+#[040] MainWindow.xaml:309  tooltip on tlbr_Signal_3
+User signal 3
+
+#[041] MainWindow.xaml:315  tooltip on tlbr_Signal_4
+User signal 4
+
+#[042] MainWindow.xaml:324  text on tlbr_Target_Label
+Target
+
+#[043] MainWindow.xaml:342  tooltip on tlbr_Target_Pulse
+Pulse the target's reset line
+
+#[044] MainWindow.xaml:369  tooltip on tlbr_Open
+Open Project (Ctrl+O)
+
+#[045] MainWindow.xaml:376  tooltip on tlbr_Save
+Save Project (Ctrl+S)
+
+#[046] MainWindow.xaml:384  tooltip on tlbr_ShowLog
+Show the event log
+
+#[047] MainWindow.xaml:402  content on tlbr_ValueType
+DEC
+
+#[048] MainWindow.xaml:403  tooltip on tlbr_ValueType
+Show register value in DEC or HEX
+
+#[049] MainWindow.xaml:415  tooltip on tlbr_CollapseAll
+Show/Hide all devices
+
+#[050] MainWindow.xaml:428  tooltip on tlbr_Workspace_Delete
+Delete Workspace
+
+#[051] MainWindow.xaml:436  tooltip on tlbr_Workspace_Save
+Left click : Save New Workspace.
+Right Click : Overwrite Selected Workspace
+
+#[052] MainWindow.xaml:445  tooltip on tlbr_Workspace_List
+Saved Workspaces
+
+#[053] MainWindow.xaml:453  text on tlbr_Workspace_Label
+Workspace
+
+#[054] MainWindow.xaml:463  tooltip on tlbr_Help
+Help (F1)
+
+#[055] MainWindow.xaml:479  tooltip on tlbr_Read_All
+Read Bus
+
+#[056] MainWindow.xaml:486  tooltip on tlbr_Write_All
+Write Bus
+
+#[057] MainWindow.xaml:501  tooltip on tlbr_Operation_List
+Bus Operations
+
+#[058] MainWindow.xaml:503  content on tlbr_Operation_List
+Register On Change
+
+#[059] MainWindow.xaml:504  content on ComboBoxItem
+Device On Change
+
+#[060] MainWindow.xaml:512  text on tlbr_Operation_Label
+Operation
+
+#[061] MainWindow.xaml:539  content on sbar_ActiveProject
+No project
+
+#[062] MainWindow.xaml:547  content on sbar_status
+Ready
+
+
+========================================================================
+  MAIN WINDOW AND PROJECT
+========================================================================
+
+#[063] Modules\AppCore.vb:31  constant ProjectFilter
+BusMaster Project (*.Busmaster)|*.Busmaster|All Files (*.*)|*.*
+
+#[064] Modules\AppCore.vb:34  constant UntitledName
+Untitled
+
+#[065] Modules\AppCore.vb:35  constant AppName
+BusMaster
+
+#[066] Modules\AppCore.vb:91  SetStatus
+Ready
+
+#[067] Modules\AppCore.vb:93  SetStatus
+Settings not read ({1}) - using defaults
+
+#[068] Modules\AppCore.vb:151  SetStatus
+Last project not found - {1}
+
+#[069] Modules\AppCore.vb:233  MessageBox.Show
+Close {1}?
+
+#[070] Modules\AppCore.vb:242  SetStatus
+Exit cancelled
+
+#[071] Modules\AppCore.vb:249  SetStatus
+Exit cancelled
+
+#[072] Modules\AppCore.vb:270  SetStatus
+New project cancelled
+
+#[073] Modules\AppCore.vb:293  SetStatus
+New project created - not saved yet
+
+#[074] Modules\AppCore.vb:317  SetStatus
+Open cancelled
+
+#[075] Modules\AppCore.vb:322  title
+Open Project
+
+#[076] Modules\AppCore.vb:332  SetStatus
+Open cancelled
+
+#[077] Modules\AppCore.vb:352  SetStatus
+That recent entry is empty
+
+#[078] Modules\AppCore.vb:357  SetStatus
+Open cancelled
+
+#[079] Modules\AppCore.vb:378  SetStatus
+Save cancelled
+
+#[080] Modules\AppCore.vb:395  SetStatus
+Save cancelled
+
+#[081] Modules\AppCore.vb:412  title
+Save Project
+
+#[082] Modules\AppCore.vb:434  ReportNotImplemented
+Options
+
+#[083] Modules\AppCore.vb:444  SetStatus
+{1} - not implemented yet
+
+#[084] Modules\AppCore.vb:454  SetStatus
+Illegal Data
+
+#[085] Modules\AppCore.vb:464  SetStatus
+File not found
+
+#[086] Modules\AppCore.vb:527  content
+{1}HEX{2}DEC{3}
+
+#[087] Modules\AppCore.vb:548  SetStatus
+{1}All devices opened{2}All devices closed{3}
+
+#[088] Modules\AppCore.vb:590  SetStatus
+Added {1}
+
+#[089] Modules\AppCore.vb:615  SetStatus
+Nothing to clone - this device has no file
+
+#[090] Modules\AppCore.vb:629  SetStatus
+Cloned {1}
+
+#[091] Modules\AppCore.vb:644  SetStatus
+Removed {1}
+
+#[092] Modules\AppCore.vb:680  SetStatus
+No {1} folder yet
+
+#[093] Modules\AppCore.vb:685  SetStatus
+Opened the {1} folder
+
+#[094] Modules\AppCore.vb:688  SetStatus
+Could not open the {1} folder - {2}
+
+#[095] Modules\AppCore.vb:730  SetStatus
+Operation: write the whole device when anything changes
+
+#[096] Modules\AppCore.vb:733  SetStatus
+Operation: write a register when it changes
+
+#[097] Modules\AppCore.vb:774  SetStatus
+{1} found on {2}, {3}
+
+#[098] Modules\AppCore.vb:780  SetStatus
+No BusMaster probe found - listing every serial port
+
+#[099] Modules\AppCore.vb:855  SetStatus
+Probe disconnected
+
+#[100] Modules\AppCore.vb:915  SetStatus
+Recording to the event log
+
+#[101] Modules\AppCore.vb:917  SetStatus
+Recording paused
+
+#[102] Modules\AppCore.vb:936  message text
+{1} - I2C bus mastering controller
+
+Keyboard
+   Ctrl+N - New Project
+   Ctrl+O - Open Project
+   Ctrl+S - Save Project
+   Ctrl+Shift+S - Save Project As
+   F1 - this help
+
+Registers
+   Left-click a bit - toggle it, and write it out
+   Right-click the bits - read that register
+   Ctrl+right-click the bits - read every register on the device
+   Padlock - keep the register on show when the device is closed
+
+Toolbar
+   Operation - whether a change writes just that register, or the
+      whole device it belongs to
+   Write All - write every register on every device
+   Read All - read every register on every device
+
+Device header
+   Click the name - rename it
+   Drag the bars - move the device up or down the stack
+   Right-click - clone or delete the device
+   Triangle - open or close the device
+
+Workspace views
+   Save - save the padlocks as a new view
+   Right-click Save - update the view showing in the list
+   Delete - throw that view away
+
+Event log
+   Record - log every register the user changes
+   Double-click a line number - set or clear a breakpoint
+   L S P D / - marker, typed in the second column
+
+Settings, options and the recent project list are kept in:
+{2}
+
+#[103] Modules\AppCore.vb:970  MessageBox.Show
+{1} Help
+
+#[104] Modules\AppCore.vb:971  SetStatus
+Help shown
+
+#[105] Modules\AppCore.vb:1042  SetStatus
+No project file specified
+
+#[106] Modules\AppCore.vb:1049  SetStatus
+Project not found - {1}
+
+#[107] Modules\AppCore.vb:1050  MessageBox.Show
+This project file no longer exists:
+
+{1}
+
+#[108] Modules\AppCore.vb:1076  SetStatus
+Opened {1} ({2} devices)
+
+#[109] Modules\AppCore.vb:1080  SetStatus
+Open failed - {1}
+
+#[110] Modules\AppCore.vb:1081  MessageBox.Show
+The project could not be opened:
+
+{1}
+
+#[111] Modules\AppCore.vb:1130  SetStatus
+Saved {1} ({2} devices)
+
+#[112] Modules\AppCore.vb:1135  SetStatus
+Save failed - {1}
+
+#[113] Modules\AppCore.vb:1136  MessageBox.Show
+The project could not be saved:
+
+{1}
+
+#[114] Modules\AppCore.vb:1232  MessageBox.Show
+Save changes to {1} first?
+
+#[115] Modules\AppCore.vb:1260  content
+{1}Ready{2}
+
+#[116] Modules\AppCore.vb:1287  message text
+{1} ({2})  Version {3}
+
+#[117] Modules\AppCore.vb:1332  header
+_{1}   {2}
+
+
+========================================================================
+  CONTROL TEMPLATES
+========================================================================
+
+#[118] Themes\Generic.xaml:77  tooltip on PART_Value
+Type a value and press Enter
+
+#[119] Themes\Generic.xaml:96  tooltip on PART_Lock
+Visible when collapsed
+
+#[120] Themes\Generic.xaml:201  tooltip on PART_Disclosure
+Show or hide this device
+
+#[121] Themes\Generic.xaml:233  tooltip on PART_WriteAll
+Write every register on this device
+
+#[122] Themes\Generic.xaml:239  tooltip on PART_ReadAll
+Read every register on this device
+
+#[123] Themes\Generic.xaml:247  tooltip on TextBlock
+Device Subaddress
+
+
+========================================================================
+  CONTROL STYLES
+========================================================================
+
+#[124] Themes\VisualStudioDark.xaml:779  text on txt_Target_State
+RUNNING
+
+#[125] Themes\VisualStudioDark.xaml:898  text on txt_Drive_State
+0/Z
+
+#[126] Themes\VisualStudioDark.xaml:545  tooltip in Style_Toolbar_Record_Toggle
+Paused - register changes are not logged
+
+#[127] Themes\VisualStudioDark.xaml:654  tooltip in Style_Toolbar_Connect_Toggle
+Not connected - click to open the probe's port
+
+#[128] Themes\VisualStudioDark.xaml:677  tooltip in Style_Toolbar_Connect_Toggle
+Connected - click to close the probe's port
+
+#[129] Themes\VisualStudioDark.xaml:760  tooltip in Style_Toolbar_Target_Toggle
+Running - click to hold the target in reset
+
+#[130] Themes\VisualStudioDark.xaml:794  tooltip in Style_Toolbar_Target_Toggle
+Held in reset - click to let the target run
+
+#[131] Themes\VisualStudioDark.xaml:879  tooltip in Style_Toolbar_Drive_Toggle
+Open drain - the probe pulls the lines down and the pull-ups raise them. Click to drive both ways.
+
+#[132] Themes\VisualStudioDark.xaml:914  tooltip in Style_Toolbar_Drive_Toggle
+Push-pull - the probe drives both levels. Click to go back to open drain.
+
+#[133] Themes\VisualStudioDark.xaml:1455  tooltip in Style_Grid_QuickViz_Toggle
+QuickViz - mark this register as one to put in front of the user
+
+
+========================================================================
+  DEVICE PANEL
+========================================================================
+
+#[134] Controls\DevicePanel.vb:525  header
+_Clone{1}
+
+#[135] Controls\DevicePanel.vb:529  header
+_Delete{1}
+
+#[136] Controls\DevicePanel.vb:1277  message text
+{1}Brush_Group_Box_1{2}Brush_Group_Box_2{3}
+
+
+========================================================================
+  REGISTER CONTROL
+========================================================================
+
+#[137] Controls\BitFieldEditor.vb:732  message text
+{1}({2}){3}
+
+
+========================================================================
+  DEVICES
+========================================================================
+
+#[138] Modules\DeviceActions.vb:18  message text
+{1}Add Device{2}
+
+#[139] Modules\DeviceActions.vb:21  AppCore.SetStatus
+Add Device cancelled
+
+#[140] Modules\DeviceActions.vb:43  message text
+{1}Edit Device{2}
+
+#[141] Modules\DeviceActions.vb:46  AppCore.SetStatus
+Edit Device cancelled
+
+#[142] Modules\DeviceActions.vb:61  message text
+{1}Clone Device{2}
+
+#[143] Modules\DeviceActions.vb:64  AppCore.SetStatus
+Clone Device cancelled
+
+#[144] Modules\DeviceActions.vb:134  AppCore.SetStatus
+Device Editor closed without saving
+
+#[145] Modules\DeviceLibrary.vb:20  constant DeviceFilter
+Device Files (*.DEV)|*.DEV|All Files (*.*)|*.*
+
+
+========================================================================
+  DEVICE EDITOR
+========================================================================
+
+#[146] DeviceEditorWindow.xaml:8  title on Window
+Device Editor
+
+#[147] DeviceEditorWindow.xaml:39  content on lbl_DeviceName
+Device Name
+
+#[148] DeviceEditorWindow.xaml:46  content on lbl_DeviceDescription
+Device Description
+
+#[149] DeviceEditorWindow.xaml:53  content on lbl_BaseAddress
+Base Address
+
+#[150] DeviceEditorWindow.xaml:67  content on lbl_AddressBits
+Address bits
+
+#[151] DeviceEditorWindow.xaml:98  tooltip on tlbr_SortRows
+Sort the rows by register address, and repaint the group blocks
+
+#[152] DeviceEditorWindow.xaml:109  tooltip on tlbr_Add8
+Add an 8 bit register - one address, no group
+
+#[153] DeviceEditorWindow.xaml:112  text on StackPanel
+8
+
+#[154] DeviceEditorWindow.xaml:121  tooltip on tlbr_Add16
+Add a 16 bit register - two consecutive addresses sharing a group
+
+#[155] DeviceEditorWindow.xaml:124  text on StackPanel
+16
+
+#[156] DeviceEditorWindow.xaml:134  tooltip on tlbr_DeleteRow
+Delete the row the cursor is on (Ctrl+Delete).
+Only that row - the rest of its group stays.
+
+#[157] DeviceEditorWindow.xaml:145  content on btn_Cancel
+_Cancel
+
+#[158] DeviceEditorWindow.xaml:147  content on btn_Save
+_Save
+
+#[159] DeviceEditorWindow.xaml:170  header on DataGrid.Columns
+Register Address
+
+#[160] DeviceEditorWindow.xaml:180  header on DataGridTextColumn
+Group
+
+#[161] DeviceEditorWindow.xaml:198  tooltip on TextBlock
+QuickViz
+
+#[162] DeviceEditorWindow.xaml:208  header on ToggleButton
+Register Name
+
+#[163] DeviceEditorWindow.xaml:215  header on DataGridTextColumn
+D7
+
+#[164] DeviceEditorWindow.xaml:222  header on DataGridTextColumn
+D6
+
+#[165] DeviceEditorWindow.xaml:229  header on DataGridTextColumn
+D5
+
+#[166] DeviceEditorWindow.xaml:236  header on DataGridTextColumn
+D4
+
+#[167] DeviceEditorWindow.xaml:243  header on DataGridTextColumn
+D3
+
+#[168] DeviceEditorWindow.xaml:250  header on DataGridTextColumn
+D2
+
+#[169] DeviceEditorWindow.xaml:257  header on DataGridTextColumn
+D1
+
+#[170] DeviceEditorWindow.xaml:264  header on DataGridTextColumn
+D0
+
+#[171] Modules\DeviceEditorCore.vb:28  constant DialogTitle
+Device Editor
+
+#[172] Modules\DeviceEditorCore.vb:160  title
+{1}{2} (*){3}
+
+#[173] Modules\DeviceEditorCore.vb:520  Warn
+This device has a register address of -1, which means it is not register addressed at all.
+
+A device like that has just the one row. Give the row a real address from 0 to 255 if you want more.
+
+#[174] Modules\DeviceEditorCore.vb:620  Warn
+This is the only row left, and a device needs at least one.
+
+Clear the cells instead - a blank row is not saved.
+
+#[175] Modules\DeviceEditorCore.vb:629  Warn
+Click a cell in the row you want to delete first.
+
+Delete works on the row the cursor is on.
+
+#[176] Modules\DeviceEditorCore.vb:676  AppCore.SetStatus
+Registers sorted by address
+
+#[177] Modules\DeviceEditorCore.vb:885  Warn
+This device file could not be found:
+
+{1}
+
+#[178] Modules\DeviceEditorCore.vb:930  Warn
+This device file could not be read:
+
+{1}
+
+#[179] Modules\DeviceEditorCore.vb:947  tooltip
+The device name cannot be changed here. Use Clone Device to make a copy under a new name.
+
+#[180] Modules\DeviceEditorCore.vb:959  tooltip
+This is still the original name. Give the clone a new one.
+
+#[181] Modules\DeviceEditorCore.vb:1033  tooltip
+This is still the original name. Give the clone a new one.
+
+#[182] Modules\DeviceEditorCore.vb:1079  ShowReadout
+0 - 255 only
+
+#[183] Modules\DeviceEditorCore.vb:1079  ShowReadout
+Base Address must be 0 to 255.
+
+#[184] Modules\DeviceEditorCore.vb:1083  ShowReadout
+must be even
+
+#[185] Modules\DeviceEditorCore.vb:1083  ShowReadout
+Above 127 the value is an 8 bit address, so its bottom bit is the read/write flag and has to be zero.
+
+#[186] Modules\DeviceEditorCore.vb:1094  ShowReadout
+bits 0 - 7 only
+
+#[187] Modules\DeviceEditorCore.vb:1094  ShowReadout
+Address bits must be 0 to 7.
+
+#[188] Modules\DeviceEditorCore.vb:1101  message text
+Base Address {1} means 7 bit address {2} (0x{3}X2{4})
+
+#[189] Modules\DeviceEditorCore.vb:1107  message text
+
+X marks the {1} bit(s) the address pins choose.
+
+#[190] Modules\DeviceEditorCore.vb:1150  Warn
+Device Name is empty. The file is named after it, so it has to be filled in.
+
+#[191] Modules\DeviceEditorCore.vb:1156  Warn
+Device Name may only contain letters and numbers.
+
+Nothing else is allowed - no spaces, dashes or punctuation.
+
+#[192] Modules\DeviceEditorCore.vb:1176  Warn
+Base Address is empty. It has to be a value from 0 to 255.
+
+#[193] Modules\DeviceEditorCore.vb:1181  Warn
+Base Address must be a value from 0 to 255.
+
+#[194] Modules\DeviceEditorCore.vb:1187  Warn
+Base Address {1} is odd.
+
+Anything above 127 is read as an 8 bit address, where the bottom bit is the read/write flag and has to be zero. Use {2}{3}, or enter the 7 bit address {4} instead.
+
+#[195] Modules\DeviceEditorCore.vb:1205  Warn
+Address bits must be a value from 0 to {1}.
+
+That is how many of the address bits the part's address pins choose. Use 0 for a part whose address is fixed.
+
+#[196] Modules\DeviceEditorCore.vb:1231  Warn
+There is already a device called "{1}".
+
+A clone needs a name of its own. Change the Device Name, or cancel the form.
+
+#[197] Modules\DeviceEditorCore.vb:1240  MessageBox.Show
+"{1}" already exists.
+
+Overwrite it?
+
+#[198] Modules\DeviceEditorCore.vb:1268  Warn
+The device could not be saved:
+
+{1}
+
+#[199] Modules\DeviceEditorCore.vb:1276  message text
+Saved {1} ({2} registers)
+
+#[200] Modules\DeviceEditorCore.vb:1281  message text
+ - reloaded {1}{2} panel{3} panels{4}
+
+#[201] Modules\DeviceEditorCore.vb:1327  Warn
+Row {1}: "{2}" is not a number.
+
+Register Address must be 0 to 255, or -1.
+
+#[202] Modules\DeviceEditorCore.vb:1334  Warn
+Row {1}: {2} is out of range.
+
+Register Address must be 0 to 255, or -1.
+
+#[203] Modules\DeviceEditorCore.vb:1344  Warn
+Duplicate Register Address {1}.
+
+It is used by row {2} and row {3}.
+
+Every register needs its own address.
+
+#[204] Modules\DeviceEditorCore.vb:1371  Warn
+A register with no address means the device is not register addressed,
+so it can only have the one row.
+
+There are {1} rows of data. Either give every row an address, or leave just one row.
+
+#[205] Modules\DeviceEditorCore.vb:1419  Warn
+Group "{1}" is on addresses that are not consecutive:
+
+   {2}, {3}
+
+A group is one register spread over neighbouring addresses. Either move these rows onto a run with no gap in it, or give the ones that are a different register a group of their own.
+
+#[206] Modules\DeviceEditorCore.vb:1458  MessageBox.Show
+Close the Device Editor without saving?
+
+Anything typed in will be lost.
+
+
+========================================================================
+  WORKSPACE VIEWS
+========================================================================
+
+#[207] Modules\WorkspaceCore.vb:32  constant DialogTitle
+Workspace
+
+#[208] Modules\WorkspaceCore.vb:39  constant QuickViewName
+QuickView
+
+#[209] Modules\WorkspaceCore.vb:87  AppCore.SetStatus
+Views not read ({1})
+
+#[210] Modules\WorkspaceCore.vb:108  MessageBox.Show
+The views could not be saved:
+
+{1}
+
+#[211] Modules\WorkspaceCore.vb:244  AppCore.SetStatus
+{1} - no registers are ticked for it in any device file
+
+#[212] Modules\WorkspaceCore.vb:248  AppCore.SetStatus
+{1} - {2} registers on {3} devices
+
+#[213] Modules\WorkspaceCore.vb:267  StringPrompt.Ask
+Name for this view:
+
+Saves the visibility state for the registers.
+
+#[214] Modules\WorkspaceCore.vb:274  AppCore.SetStatus
+View not saved
+
+#[215] Modules\WorkspaceCore.vb:281  AppCore.SetStatus
+View not saved
+
+#[216] Modules\WorkspaceCore.vb:288  MessagePrompt.ShowInfo
+"{1}" is the built-in view, so a view of your own cannot take that name.
+
+It comes from the QuickViz ticks in the device files. To change what it shows, edit the device and tick different registers.
+
+Give this one another name.
+
+#[217] Modules\WorkspaceCore.vb:294  AppCore.SetStatus
+View not saved
+
+#[218] Modules\WorkspaceCore.vb:302  MessageBox.Show
+There is already a view called "{1}".
+
+Replace it?
+
+#[219] Modules\WorkspaceCore.vb:308  AppCore.SetStatus
+View not saved
+
+#[220] Modules\WorkspaceCore.vb:328  AppCore.SetStatus
+Saved view {1}
+
+#[221] Modules\WorkspaceCore.vb:346  AppCore.SetStatus
+Pick a view to update, or left-click Save to make a new one
+
+#[222] Modules\WorkspaceCore.vb:353  MessagePrompt.ShowWarning
+{1} cannot be written over.
+
+It is not stored with the project at all - it is the QuickViz ticks in the device files, read back. Tick different registers in the Device Editor to change what it shows.
+
+To keep what is on screen, pick one of your own views first, or left-click Save to make a new one.
+
+#[223] Modules\WorkspaceCore.vb:360  AppCore.SetStatus
+QuickView not updated
+
+#[224] Modules\WorkspaceCore.vb:371  AppCore.SetStatus
+Updated view {1}
+
+#[225] Modules\WorkspaceCore.vb:437  message text
+View {1} - {2} devices restored
+
+#[226] Modules\WorkspaceCore.vb:441  message text
+, {1} no longer here
+
+#[227] Modules\WorkspaceCore.vb:483  AppCore.SetStatus
+Pick a view to delete first
+
+#[228] Modules\WorkspaceCore.vb:490  MessagePrompt.ShowError
+{1} cannot be deleted.
+
+It is built in, and there is nothing of it in the project file to throw away. What it shows is the QuickViz ticks in the device files.
+
+#[229] Modules\WorkspaceCore.vb:494  AppCore.SetStatus
+QuickView not deleted
+
+#[230] Modules\WorkspaceCore.vb:507  AppCore.SetStatus
+Deleted view {1}
+
+#[231] Modules\WorkspaceCore.vb:539  MessageBox.Show
+Views are kept beside the project file, so the project has to be saved before one can be made.
+
+#[232] Modules\WorkspaceCore.vb:544  AppCore.SetStatus
+Save the project before saving a view
+
+
+========================================================================
+  EVENT LOG
+========================================================================
+
+#[233] EventLogWindow.xaml:8  title on Window
+Event Log
+
+#[234] EventLogWindow.xaml:38  content on tlbr_Log_Save_As
+Save As
+
+#[235] EventLogWindow.xaml:39  tooltip on tlbr_Log_Save_As
+Save the log under a new name
+
+#[236] EventLogWindow.xaml:46  tooltip on tlbr_Log_Save
+Save the log
+
+#[237] EventLogWindow.xaml:57  tooltip on tlbr_Log_Replay
+Replay the current line
+
+#[238] EventLogWindow.xaml:70  tooltip on tlbr_Log_Replay_Block
+Replay the selected block
+
+#[239] EventLogWindow.xaml:80  tooltip on tlbr_Log_Replay_All
+Replay the whole log
+
+#[240] EventLogWindow.xaml:94  tooltip on tlbr_Log_Clear
+Empty the log
+
+#[241] EventLogWindow.xaml:121  header on DataGrid.Columns
+#
+
+#[242] EventLogWindow.xaml:138  header on DataGridTextColumn
+Host
+
+#[243] EventLogWindow.xaml:145  header on DataGridTextColumn
+Reg
+
+#[244] EventLogWindow.xaml:152  header on DataGridTextColumn
+Value
+
+#[245] EventLogWindow.xaml:159  header on DataGridTextColumn
+Comment
+
+#[246] Modules\EventLogCore.vb:29  constant WindowTitle
+Event Log
+
+#[247] Modules\EventLogCore.vb:131  title
+{1} - {2}
+
+#[248] Modules\EventLogCore.vb:461  AppCore.SetStatus
+Event log cleared
+
+#[249] Modules\EventLogCore.vb:540  StringPrompt.Ask
+Name for this log:
+
+It will be saved as {1}-<name>{2}
+
+#[250] Modules\EventLogCore.vb:551  MessageBox.Show
+That name contains characters that cannot be used in a file name.
+
+#[251] Modules\EventLogCore.vb:556  message text
+{1}-{2}{3}
+
+#[252] Modules\EventLogCore.vb:599  AppCore.SetStatus
+Saved {1}
+
+#[253] Modules\EventLogCore.vb:602  MessageBox.Show
+The log could not be saved:
+
+{1}
+
+#[254] Modules\EventLogCore.vb:643  AppCore.SetStatus
+Loaded {1}
+
+#[255] Modules\EventLogCore.vb:646  MessageBox.Show
+The log could not be read:
+
+{1}
+
+#[256] Modules\EventLogCore.vb:726  ReportNotImplemented
+Replay
+
+#[257] Modules\EventLogCore.vb:733  ReportNotImplemented
+Replay Block
+
+#[258] Modules\EventLogCore.vb:740  ReportNotImplemented
+Replay All
+
+
+========================================================================
+  COMMAND WINDOW
+========================================================================
+
+#[259] CommandWindow.xaml:8  title on Window
+Command
+
+#[260] Modules\CommandCore.vb:34  constant WindowTitle
+Command
+
+#[261] Modules\CommandCore.vb:43  constant SyntaxError
+ <- Syntax Error
+
+#[262] Modules\CommandCore.vb:603  message text
+{1}Brush_Command_Plain{2}
+
+
+========================================================================
+  TERMINAL WINDOW
+========================================================================
+
+#[263] TerminalWindow.xaml:8  title on Window
+Terminal
+
+#[264] TerminalWindow.xaml:38  tooltip on tlbr_Terminal_Clear
+Empty the transcript
+
+#[265] TerminalWindow.xaml:50  text on lbl_BufferSize
+BufferSize
+
+#[266] TerminalWindow.xaml:62  text on txt_BufferSize
+20
+
+#[267] TerminalWindow.xaml:76  tooltip on tlbr_Buffer_Up
+Keep more lines
+
+#[268] TerminalWindow.xaml:82  tooltip on tlbr_Buffer_Down
+Keep fewer lines
+
+#[269] TerminalWindow.xaml:94  text on lbl_ProbePort
+No Probe
+
+#[270] TerminalWindow.xaml:100  text on lbl_Probe
+Probe : 
+
+#[271] Modules\TerminalCore.vb:64  text
+No Probe
+
+
+========================================================================
+  PROBE AND TARGET
+========================================================================
+
+#[272] Modules\ProbeControl.vb:156  AppCore.SetStatus
+User signal {1}{2} high{3} low{4}
+
+#[273] Modules\ProbeControl.vb:169  AppCore.SetStatus
+{1}Target held in reset{2}Target released - running{3}
+
+#[274] Modules\ProbeControl.vb:181  AppCore.SetStatus
+Reset pulse sent to the target
+
+#[275] Modules\ProbeControl.vb:193  AppCore.SetStatus
+Bus released
+
+#[276] Modules\ProbeControl.vb:209  AppCore.SetStatus
+Cleared the bus
+
+#[277] Modules\ProbeControl.vb:222  AppCore.SetStatus
+{1}Bus lines driven push-pull (0/1){2}Bus lines open drain (0/Z){3}
+
+#[278] Modules\ProbeControl.vb:490  AppCore.SetStatus
+Probe port cleared - the Terminal will turn lines straight round
+
+#[279] Modules\ProbeControl.vb:492  AppCore.SetStatus
+Probe port set to {1}
+
+#[280] Modules\ProbeControl.vb:522  Report
+Probe connected on {1}
+
+#[281] Modules\ProbeControl.vb:530  Complain
+Probe port {1} would not open - {2}
+
+#[282] Modules\ProbeControl.vb:555  Report
+Probe disconnected
+
+#[283] Modules\ProbeControl.vb:574  Complain
+Probe write failed - {1}
+
+
+========================================================================
+  BUS OPERATIONS
+========================================================================
+
+#[284] Modules\BusActions.vb:23  ReportNotImplemented
+Scan Bus
+
+#[285] Modules\BusActions.vb:31  ReportNotImplemented
+Poll Bus
+
+#[286] Modules\BusActions.vb:39  ReportNotImplemented
+Reset Bus
+
+#[287] Modules\BusActions.vb:53  AppCore.SetStatus
+Wrote every register on {1}
+
+#[288] Modules\BusActions.vb:65  AppCore.SetStatus
+Read every register on {1}
+
+#[289] Modules\BusEvents.vb:116  constant BlockBeginDeviceWrite - one of eight log labels that must all stay 48 characters
+---=========== Begin Device Write ===========---
+
+#[290] Modules\BusEvents.vb:117  constant BlockEndDeviceWrite - one of eight log labels that must all stay 48 characters
+--------------  End Device Write  --------------
+
+#[291] Modules\BusEvents.vb:119  constant BlockBeginDeviceRead - one of eight log labels that must all stay 48 characters
+---=========== Begin Device Read  ===========---
+
+#[292] Modules\BusEvents.vb:120  constant BlockEndDeviceRead - one of eight log labels that must all stay 48 characters
+--------------- End Device Read  ---------------
+
+#[293] Modules\BusEvents.vb:122  constant BlockBeginSystemWrite - one of eight log labels that must all stay 48 characters
+============== Begin System Write ==============
+
+#[294] Modules\BusEvents.vb:123  constant BlockEndSystemWrite - one of eight log labels that must all stay 48 characters
+===------------ End System Write ------------===
+
+#[295] Modules\BusEvents.vb:125  constant BlockBeginSystemRead - one of eight log labels that must all stay 48 characters
+============== Begin System Read  ==============
+
+#[296] Modules\BusEvents.vb:126  constant BlockEndSystemRead - one of eight log labels that must all stay 48 characters
+===------------ End System Read  ------------===
+
+#[297] Modules\BusEvents.vb:295  constant WriteLeadIn
+>
+
+#[298] Modules\BusEvents.vb:296  constant ReadLeadIn
+<
+
+#[299] Modules\BusEvents.vb:303  constant ReadPlaceholder
+---
+
+
+========================================================================
+  STRING PROMPT
+========================================================================
+
+#[300] StringPromptWindow.xaml:8  title on Window
+BusMaster
+
+#[301] StringPromptWindow.xaml:35  text on lbl_Prompt
+Name:
+
+#[302] StringPromptWindow.xaml:49  content on btn_Ok
+_OK
+
+#[303] StringPromptWindow.xaml:55  content on btn_Cancel
+_Cancel
+
+
+========================================================================
+  MESSAGE BOX
+========================================================================
+
+#[304] MessagePromptWindow.xaml:8  title on Window
+BusMaster
+
+#[305] MessagePromptWindow.xaml:52  text on lbl_Message
+Message
+
+#[306] MessagePromptWindow.xaml:58  content on btn_Ok
+_OK

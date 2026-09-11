@@ -179,9 +179,31 @@ Public Class BitFieldEditor
         End Set
     End Property
 
+    Public Shared ReadOnly ShowVisibilitySwitchProperty As DependencyProperty =
+        DependencyProperty.Register("ShowVisibilitySwitch", GetType(Boolean), GetType(BitFieldEditor),
+                                    New FrameworkPropertyMetadata(True))
+
+    ''' <summary>
+    ''' Whether this register draws its visibility switch. True everywhere except on
+    ''' the second and later registers of a group: those are shown and hidden with
+    ''' the first one, so a switch of their own would be a control that cannot
+    ''' disagree with the one above it.
+    '''
+    ''' The cell is still measured, so the rows stay in line with each other - the
+    ''' switch is not there rather than the row being a different shape.
+    ''' </summary>
+    Public Property ShowVisibilitySwitch As Boolean
+        Get
+            Return CBool(GetValue(ShowVisibilitySwitchProperty))
+        End Get
+        Set(newValue As Boolean)
+            SetValue(ShowVisibilitySwitchProperty, newValue)
+        End Set
+    End Property
+
     Public Shared ReadOnly IsLockedProperty As DependencyProperty =
         DependencyProperty.Register("IsLocked", GetType(Boolean), GetType(BitFieldEditor),
-                                    New FrameworkPropertyMetadata(False))
+                                    New FrameworkPropertyMetadata(False, AddressOf OnIsLockedChanged))
 
     ''' <summary>
     ''' State of the padlock. It is a marker, not a lock: it does not stop the byte
@@ -249,6 +271,37 @@ Public Class BitFieldEditor
     Private Sub AnnounceValueChanged()
 
         MyBase.RaiseEvent(New RoutedEventArgs(ValueChangedEvent, Me))
+
+    End Sub
+
+    ''' <summary>
+    ''' Raised whenever IsLocked changes, however it changed - the switch on the
+    ''' control, a restored view, or code. DevicePanel listens so that the registers
+    ''' of one group can be kept showing or hidden together.
+    '''
+    ''' Named after the property, so the two get renamed together when "lock"
+    ''' finally becomes "visibility" everywhere.
+    ''' </summary>
+    Public Shared ReadOnly LockChangedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("LockChanged", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(BitFieldEditor))
+
+    Public Custom Event LockChanged As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(LockChangedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(LockChangedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
+    Private Shared Sub OnIsLockedChanged(source As DependencyObject, e As DependencyPropertyChangedEventArgs)
+
+        Dim editor As BitFieldEditor = TryCast(source, BitFieldEditor)
+        If editor IsNot Nothing Then editor.RaiseEvent(New RoutedEventArgs(LockChangedEvent, editor))
 
     End Sub
 

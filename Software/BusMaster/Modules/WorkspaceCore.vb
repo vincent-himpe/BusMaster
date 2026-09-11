@@ -31,6 +31,13 @@ Public Module WorkspaceCore
 
     Private Const DialogTitle As String = "Workspace"
 
+    ''' <summary>
+    ''' The one view that is not saved anywhere: it comes from the QuickViz ticks in
+    ''' the device files themselves. Always at the top of the list, above the
+    ''' divider, and always there - a project with no views of its own still has it.
+    ''' </summary>
+    Public Const QuickViewName As String = "QuickView"
+
     ''' <summary>The views for the open project, as last read or written.</summary>
     Private Views As WorkspaceFile
 
@@ -111,7 +118,14 @@ Public Module WorkspaceCore
     '  The toolbar list
     ' ========================================================================
 
-    ''' <summary>Refills the drop-down from Views, leaving nothing selected.</summary>
+    ''' <summary>
+    ''' Refills the drop-down: QuickView, a divider, then the project's own views.
+    ''' Nothing is left selected.
+    '''
+    ''' The entries are ComboBoxItems rather than bare strings so that the divider
+    ''' can be one of them and still be unpickable - a disabled item is skipped by
+    ''' the mouse and by the arrow keys alike.
+    ''' </summary>
     Private Sub RefreshList()
 
         Dim shell As MainWindow = AppCore.MainShell
@@ -119,13 +133,29 @@ Public Module WorkspaceCore
 
         Refilling = True
 
-        shell.tlbr_Workspace_List.Items.Clear()
+        Dim list As ComboBox = shell.tlbr_Workspace_List
+        list.Items.Clear()
 
-        For Each view As WorkspaceView In Views.Views
-            If view IsNot Nothing Then shell.tlbr_Workspace_List.Items.Add(view.Name)
-        Next
+        list.Items.Add(New ComboBoxItem With {.Content = QuickViewName})
 
-        shell.tlbr_Workspace_List.SelectedIndex = -1
+        If Views.Views.Count > 0 Then
+
+            list.Items.Add(New ComboBoxItem With {
+                .Content = New Separator With {
+                    .Style = TryCast(shell.TryFindResource("Style_List_Separator"), Style)
+                },
+                .IsEnabled = False,
+                .IsHitTestVisible = False,
+                .Focusable = False
+            })
+
+            For Each view As WorkspaceView In Views.Views
+                If view IsNot Nothing Then list.Items.Add(New ComboBoxItem With {.Content = view.Name})
+            Next
+
+        End If
+
+        list.SelectedIndex = -1
 
         Refilling = False
 
@@ -138,18 +168,36 @@ Public Module WorkspaceCore
         If shell Is Nothing Then Exit Sub
 
         Refilling = True
-        shell.tlbr_Workspace_List.SelectedItem = name
+
+        For Each item As Object In shell.tlbr_Workspace_List.Items
+
+            Dim entry As ComboBoxItem = TryCast(item, ComboBoxItem)
+            If entry Is Nothing Then Continue For
+
+            If String.Equals(TryCast(entry.Content, String), name, StringComparison.OrdinalIgnoreCase) Then
+                shell.tlbr_Workspace_List.SelectedItem = entry
+                Exit For
+            End If
+
+        Next
+
         Refilling = False
 
     End Sub
 
-    ''' <summary>The name showing in the drop-down, or an empty string.</summary>
+    ''' <summary>
+    ''' The name showing in the drop-down, or an empty string. The divider has no
+    ''' name, which is what makes everything below treat it as nothing chosen.
+    ''' </summary>
     Private Function SelectedName() As String
 
         Dim shell As MainWindow = AppCore.MainShell
         If shell Is Nothing Then Return String.Empty
 
-        Return If(TryCast(shell.tlbr_Workspace_List.SelectedItem, String), String.Empty)
+        Dim entry As ComboBoxItem = TryCast(shell.tlbr_Workspace_List.SelectedItem, ComboBoxItem)
+        If entry Is Nothing Then Return String.Empty
+
+        Return If(TryCast(entry.Content, String), String.Empty)
 
     End Function
 
@@ -161,7 +209,45 @@ Public Module WorkspaceCore
         Dim name As String = SelectedName()
         If name.Length = 0 Then Exit Sub
 
-        ApplyView(name)
+        If String.Equals(name, QuickViewName, StringComparison.OrdinalIgnoreCase) Then
+            ApplyQuickView()
+        Else
+            ApplyView(name)
+        End If
+
+    End Sub
+
+    ''' <summary>
+    ''' Shows what every device file says is worth looking at. Not a saved view -
+    ''' nothing is read from the project, each panel already knows which of its
+    ''' registers were ticked - so it works on a device the moment it is added and
+    ''' needs no project to have been saved.
+    ''' </summary>
+    Public Sub ApplyQuickView()
+
+        Dim shell As MainWindow = AppCore.MainShell
+        If shell Is Nothing Then Exit Sub
+
+        Dim panels As Integer = 0
+        Dim marked As Integer = 0
+
+        For Each panel As DevicePanel In AppCore.DevicePanels()
+
+            panel.ApplyQuickView()
+
+            panels += 1
+            marked += panel.QuickVizCount()
+
+        Next
+
+        If marked = 0 Then
+            AppCore.SetStatus(QuickViewName & " - no registers are ticked for it in any device file")
+            Exit Sub
+        End If
+
+        AppCore.SetStatus(QuickViewName & " - " &
+                          marked.ToString(CultureInfo.InvariantCulture) & " registers on " &
+                          panels.ToString(CultureInfo.InvariantCulture) & " devices")
 
     End Sub
 
@@ -196,14 +282,26 @@ Public Module WorkspaceCore
             Exit Sub
         End If
 
+        ' Information rather than a telling-off: nothing on screen says that name is
+        ' spoken for, so the user could not have known.
+        If String.Equals(entered, QuickViewName, StringComparison.OrdinalIgnoreCase) Then
+            MessagePrompt.ShowInfo(AppCore.MainShell, DialogTitle,
+                                   """" & QuickViewName & """ is the built-in view, so a view of your own " &
+                                   "cannot take that name." & vbCrLf & vbCrLf &
+                                   "It comes from the QuickViz ticks in the device files. To change what it " &
+                                   "shows, edit the device and tick different registers." & vbCrLf & vbCrLf &
+                                   "Give this one another name.")
+            AppCore.SetStatus("View not saved")
+            Exit Sub
+        End If
+
         Dim existing As WorkspaceView = Find(entered)
 
         If existing IsNot Nothing Then
 
-            Dim answer As MessageBoxResult = MessageBox.Show(
-                AppCore.MainShell,
-                "There is already a view called """ & entered & """." & vbCrLf & vbCrLf & "Replace it?",
-                DialogTitle, MessageBoxButton.OKCancel, MessageBoxImage.Question)
+            Dim answer As MessageBoxResult = MessagePrompt.AskOkCancel(
+                AppCore.MainShell, DialogTitle,
+                "There is already a view called """ & entered & """." & vbCrLf & vbCrLf & "Replace it?")
 
             If answer <> MessageBoxResult.OK Then
                 AppCore.SetStatus("View not saved")
@@ -245,6 +343,20 @@ Public Module WorkspaceCore
 
         If name.Length = 0 Then
             AppCore.SetStatus("Pick a view to update, or left-click Save to make a new one")
+            Exit Sub
+        End If
+
+        ' A warning rather than information: this one would have written over
+        ' something, and the user meant it to.
+        If String.Equals(name, QuickViewName, StringComparison.OrdinalIgnoreCase) Then
+            MessagePrompt.ShowWarning(AppCore.MainShell, DialogTitle,
+                                      QuickViewName & " cannot be written over." & vbCrLf & vbCrLf &
+                                      "It is not stored with the project at all - it is the QuickViz ticks in " &
+                                      "the device files, read back. Tick different registers in the Device " &
+                                      "Editor to change what it shows." & vbCrLf & vbCrLf &
+                                      "To keep what is on screen, pick one of your own views first, or " &
+                                      "left-click Save to make a new one.")
+            AppCore.SetStatus("QuickView not updated")
             Exit Sub
         End If
 
@@ -368,6 +480,17 @@ Public Module WorkspaceCore
 
         If name.Length = 0 Then
             AppCore.SetStatus("Pick a view to delete first")
+            Exit Sub
+        End If
+
+        ' An error rather than a warning: there is nothing here that could be
+        ' deleted even in principle, so this is not a decision to reconsider.
+        If String.Equals(name, QuickViewName, StringComparison.OrdinalIgnoreCase) Then
+            MessagePrompt.ShowError(AppCore.MainShell, DialogTitle,
+                                    QuickViewName & " cannot be deleted." & vbCrLf & vbCrLf &
+                                    "It is built in, and there is nothing of it in the project file to " &
+                                    "throw away. What it shows is the QuickViz ticks in the device files.")
+            AppCore.SetStatus("QuickView not deleted")
             Exit Sub
         End If
 

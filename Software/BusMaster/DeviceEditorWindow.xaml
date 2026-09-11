@@ -14,6 +14,7 @@
         TextOptions.TextFormattingMode="Display"
         UseLayoutRounding="True"
         Loaded="Window_Loaded"
+        KeyDown="Window_KeyDown"
         Closing="Window_Closing">
 
     <DockPanel LastChildFill="True">
@@ -141,8 +142,10 @@
              Save / Cancel
              ================================================================== -->
         <Grid x:Name="grd_Buttons" DockPanel.Dock="Bottom" Margin="10,8,10,10">
+            <!-- Not IsCancel - see DeviceEditorCore.CancelEditor. Escape is taken
+                 from the window's KeyDown instead. -->
             <Button x:Name="btn_Cancel" HorizontalAlignment="Left"
-                    Content="_Cancel" IsCancel="True" Click="btn_Cancel_Click"/>
+                    Content="_Cancel" Click="btn_Cancel_Click"/>
             <Button x:Name="btn_Save" HorizontalAlignment="Right"
                     Content="_Save" IsDefault="True" Click="btn_Save_Click"/>
         </Grid>
@@ -183,6 +186,27 @@
                                     CellStyle="{StaticResource Style_Grid_Cell_Group}"
                                     ElementStyle="{StaticResource Style_Grid_Display}"
                                     EditingElementStyle="{StaticResource Style_Grid_Edit_Group}"/>
+
+                <!-- QuickViz. The header is a glyph so the column can be as narrow
+                     as the tick it holds. A template column rather than a check box
+                     one: the tick answers to a single click that way, and the cell
+                     never goes into edit mode at all. -->
+                <DataGridTemplateColumn Width="30" CanUserSort="False"
+                                        CellStyle="{StaticResource Style_Grid_Cell_Data}">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="&#xE8A3;"
+                                   FontFamily="{StaticResource Font_Glyph}"
+                                   FontWeight="{StaticResource Weight_Glyph}"
+                                   FontSize="14"
+                                   ToolTip="QuickViz"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ToggleButton Style="{StaticResource Style_Grid_QuickViz_Toggle}"
+                                          IsChecked="{Binding QuickViz, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
                 <DataGridTextColumn Header="Register Name" Width="150"
                                     Binding="{Binding RegisterName, UpdateSourceTrigger=PropertyChanged}"

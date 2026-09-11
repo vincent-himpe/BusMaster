@@ -43,6 +43,23 @@ Public Class DevicePanel
     ''' </summary>
     Private Const RegisterIndent As Double = 20
 
+    ''' <summary>
+    ''' Room down the right hand edge for the group box to close in, matching the
+    ''' gutter the registers are already indented from on the left.
+    ''' </summary>
+    Private Const GroupGutterWidth As Double = 10
+
+    ''' <summary>Line weight of the box drawn round a group.</summary>
+    Private Const GroupBoxThickness As Double = 2
+
+    Private Const GroupBoxCorner As Double = 4
+
+    ''' <summary>
+    ''' Air above and below a group, so its box has somewhere to sit and the group
+    ''' reads as one thing set apart from what is around it.
+    ''' </summary>
+    Private Const GroupSpacing As Double = 3
+
 
     ''' <summary>
     ''' Raised when LoadDevice could not read the file it was given. Nothing has
@@ -168,8 +185,55 @@ Public Class DevicePanel
     ''' </summary>
     Private ReadOnly RegisterEditors As New List(Of BitFieldEditor)
 
+    ''' <summary>
+    ''' Which editors draw their own top edge rather than borrowing the border of
+    ''' the row above: the ones with a gap above them, at the two ends of a group.
+    ''' One entry per editor, same order.
+    ''' </summary>
+    Private ReadOnly RegisterTopEdge As New List(Of Boolean)
+
+    ''' <summary>The boxes drawn round groups of registers, top to bottom.</summary>
+    Private ReadOnly GroupMarks As New List(Of GroupMark)
+
+    ''' <summary>
+    ''' Addresses of the registers the device file ticked as QuickViz - the ones
+    ''' whoever drew the part up thought were worth looking at. Read once, when the
+    ''' file is loaded.
+    ''' </summary>
+    Private ReadOnly QuickVizRegisters As New List(Of Integer)
+
+    ''' <summary>
+    ''' One group box and the registers it encloses. The editors are held rather
+    ''' than the row numbers, because whether the box is worth drawing depends on
+    ''' whether any of them survived a collapse.
+    ''' </summary>
+    Private NotInheritable Class GroupMark
+
+        Public ReadOnly Box As Border
+        Public ReadOnly Members As New List(Of BitFieldEditor)
+
+        Public Sub New(drawn As Border)
+            Box = drawn
+        End Sub
+
+        ''' <summary>True while at least one register in the group is on show.</summary>
+        Public Function AnyShowing() As Boolean
+
+            For Each editor As BitFieldEditor In Members
+                If editor.Visibility = Visibility.Visible Then Return True
+            Next
+
+            Return False
+
+        End Function
+
+    End Class
+
     ''' <summary>Guards the target list while it is being refilled.</summary>
     Private SuppressTargetChange As Boolean = False
+
+    ''' <summary>True while a group's registers are being brought into line.</summary>
+    Private SyncingGroups As Boolean = False
 
     ' What the file said, kept so the target list can be rebuilt whenever the
     ' template turns up. The base address is held separately from DeviceAddress:
@@ -297,6 +361,11 @@ Public Class DevicePanel
         ' and goes no further.
         Me.AddHandler(BitFieldEditor.ReadAllRequestedEvent,
                       New RoutedEventHandler(AddressOf Registers_ReadAllRequested))
+
+        ' So is keeping a group's registers on show together. The panel is the only
+        ' thing that knows which registers are one register.
+        Me.AddHandler(BitFieldEditor.LockChangedEvent,
+                      New RoutedEventHandler(AddressOf Registers_LockChanged))
 
     End Sub
 
@@ -582,8 +651,9 @@ Public Class DevicePanel
         Dim expanded As Boolean = IsExpanded
         Dim seenTop As Boolean = False
 
-        For Each editor As BitFieldEditor In RegisterEditors
+        For index As Integer = 0 To RegisterEditors.Count - 1
 
+            Dim editor As BitFieldEditor = RegisterEditors(index)
             Dim showing As Boolean = expanded OrElse editor.IsLocked
 
             ' Collapsed rows measure to nothing, so the survivors close up by
@@ -592,11 +662,21 @@ Public Class DevicePanel
 
             If showing Then
                 ' Only the topmost row on show draws a top edge; below it each row
-                ' borrows the border of the one above.
-                editor.BorderThickness = If(seenTop, New Thickness(1, 0, 1, 1), New Thickness(1))
+                ' borrows the border of the one above. A row at the edge of a group
+                ' is the exception: there is a gap above it, so there is no border
+                ' up there to borrow.
+                Dim ownTop As Boolean = Not seenTop OrElse RegisterTopEdge(index)
+
+                editor.BorderThickness = If(ownTop, New Thickness(1), New Thickness(1, 0, 1, 1))
                 seenTop = True
             End If
 
+        Next
+
+        ' A box with nothing left inside it would draw as a thin sliver, so it goes
+        ' when the last of its registers does.
+        For Each mark As GroupMark In GroupMarks
+            mark.Box.Visibility = If(mark.AnyShowing(), Visibility.Visible, Visibility.Collapsed)
         Next
 
     End Sub
@@ -793,9 +873,17 @@ Public Class DevicePanel
             Next
         End If
 
+        ' Applied without the group rule getting in the way, so the result does not
+        ' depend on which register of a group the list happens to name first.
+        SyncingGroups = True
+
         For Each editor As BitFieldEditor In RegisterEditors
             editor.IsLocked = wanted.Contains(CInt(editor.Registeraddress))
         Next
+
+        SyncingGroups = False
+
+        NormaliseGroupVisibility()
 
         ' A collapsed panel is showing the locked registers right now, so what it
         ' shows has just changed.
@@ -837,6 +925,30 @@ Public Class DevicePanel
         ApplyDeviceHeader(data)
         ApplyTargetAddresses()
         BuildRegisterEditors(data)
+
+    End Sub
+
+    ''' <summary>
+    ''' How many of this device's registers are ticked for QuickViz.
+    ''' </summary>
+    Public Function QuickVizCount() As Integer
+
+        Return QuickVizRegisters.Count
+
+    End Function
+
+    ''' <summary>
+    ''' Shows exactly the registers the device file ticked for QuickViz and hides
+    ''' the rest, so a part with fifty configuration registers and three data ones
+    ''' collapses to the three that are worth watching.
+    '''
+    ''' It is the same thing a saved view does, with the list coming from the device
+    ''' file rather than from the project - which is what lets it work on a device
+    ''' the moment it is added, with nothing saved anywhere.
+    ''' </summary>
+    Public Sub ApplyQuickView()
+
+        SetLockedRegisters(QuickVizRegisters)
 
     End Sub
 
@@ -962,17 +1074,24 @@ Public Class DevicePanel
 
     ''' <summary>
     ''' One BitFieldEditor per register, stacked. Each starts RegisterIndent in from
-    ''' the panel's left edge and runs to its right edge, so they grow with the panel.
+    ''' the panel's left edge and stops GroupGutterWidth short of its right one, so
+    ''' they grow with the panel and leave the gutters a group box can be drawn in.
     ''' </summary>
     Private Sub BuildRegisterEditors(data As DeviceFileData)
 
-        ' Two columns: the gutter that holds the target selector, and the registers.
+        ' Three columns: the gutter that holds the target selector, the registers,
+        ' and the gutter the group boxes close in.
         Dim layout As New Grid()
         layout.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(RegisterIndent)})
         layout.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(1, GridUnitType.Star)})
+        layout.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(GroupGutterWidth)})
 
         RegisterEditors.Clear()
+        RegisterTopEdge.Clear()
+        GroupMarks.Clear()
+        QuickVizRegisters.Clear()
 
+        Dim tags As New List(Of String)
         Dim rowIndex As Integer = 0
 
         If data.Registers IsNot Nothing Then
@@ -990,16 +1109,26 @@ Public Class DevicePanel
                     .HorizontalAlignment = HorizontalAlignment.Stretch
                 }
 
+                ' Kept by the address the editor ended up with, not the one the file
+                ' wrote, so the two cannot disagree about which register this is.
+                If register.QuickViz Then QuickVizRegisters.Add(CInt(editor.Registeraddress))
+
                 Grid.SetRow(editor, rowIndex)
                 Grid.SetColumn(editor, 1)
                 layout.Children.Add(editor)
                 RegisterEditors.Add(editor)
+                RegisterTopEdge.Add(False)
+                tags.Add(If(register.RegisterGroup, String.Empty).Trim())
 
                 rowIndex += 1
 
             Next
 
         End If
+
+        ' Added last but given a lower z-index, so the fill sits behind the registers
+        ' while the code that needs the editors in hand still runs after them.
+        BuildGroupMarks(layout, tags)
 
         Me.Content = layout
 
@@ -1011,6 +1140,180 @@ Public Class DevicePanel
         ' job, so it gets the last word whether or not the value below changes it.
         IsExpanded = True
         ApplyDisclosure()
+
+    End Sub
+
+    ''' <summary>
+    ''' A register's visibility switch was thrown. Registers in a group are one
+    ''' register spread over several addresses, so they are shown and hidden
+    ''' together: half a 16 bit register surviving a collapse would be nothing worth
+    ''' looking at.
+    ''' </summary>
+    Private Sub Registers_LockChanged(sender As Object, e As RoutedEventArgs)
+
+        e.Handled = True
+        MatchGroupVisibility(TryCast(e.OriginalSource, BitFieldEditor))
+
+    End Sub
+
+    ''' <summary>
+    ''' Puts the rest of a register's group where that register has just gone. Does
+    ''' nothing for a register that is in no group.
+    ''' </summary>
+    Private Sub MatchGroupVisibility(changed As BitFieldEditor)
+
+        ' Setting the others throws their switches too, and those come back through
+        ' here. One pass is enough.
+        If changed Is Nothing OrElse SyncingGroups Then Exit Sub
+
+        Dim mark As GroupMark = MarkHolding(changed)
+        If mark Is Nothing Then Exit Sub
+
+        SyncingGroups = True
+
+        For Each member As BitFieldEditor In mark.Members
+            member.IsLocked = changed.IsLocked
+        Next
+
+        SyncingGroups = False
+
+        ' What a collapsed panel is showing has just changed.
+        ApplyDisclosure()
+
+    End Sub
+
+    ''' <summary>
+    ''' Brings every group into line with itself: a group with any register on show
+    ''' shows all of them. For after something has set the switches wholesale - a
+    ''' restored view knows nothing about groups, and one written before groups
+    ''' existed can name half of one.
+    ''' </summary>
+    Private Sub NormaliseGroupVisibility()
+
+        SyncingGroups = True
+
+        For Each mark As GroupMark In GroupMarks
+
+            Dim anyShown As Boolean = False
+
+            For Each member As BitFieldEditor In mark.Members
+                If member.IsLocked Then anyShown = True
+            Next
+
+            For Each member As BitFieldEditor In mark.Members
+                member.IsLocked = anyShown
+            Next
+
+        Next
+
+        SyncingGroups = False
+
+    End Sub
+
+    ''' <summary>The group this register belongs to, or Nothing if it is on its own.</summary>
+    Private Function MarkHolding(editor As BitFieldEditor) As GroupMark
+
+        For Each mark As GroupMark In GroupMarks
+            If mark.Members.Contains(editor) Then Return mark
+        Next
+
+        Return Nothing
+
+    End Function
+
+    ''' <summary>
+    ''' Draws a box round each run of registers sharing a group tag - one register
+    ''' spread over consecutive addresses, so it should read as one thing.
+    '''
+    ''' The box spans all three columns, so it closes in the gutters either side of
+    ''' the registers rather than crossing them. Neighbouring groups take different
+    ''' colours, alternating down the panel, because two boxes touching end to end
+    ''' would otherwise read as one. An untagged register gets nothing.
+    ''' </summary>
+    Private Sub BuildGroupMarks(layout As Grid, tags As List(Of String))
+
+        Dim first As Integer = 0
+
+        While first < tags.Count
+
+            Dim tag As String = tags(first)
+
+            If tag.Length = 0 Then
+                first += 1
+                Continue While
+            End If
+
+            ' How far the run of this tag reaches.
+            Dim last As Integer = first
+
+            While last + 1 < tags.Count AndAlso
+                  String.Equals(tags(last + 1), tag, StringComparison.OrdinalIgnoreCase)
+                last += 1
+            End While
+
+            AddGroupMark(layout, first, last)
+
+            first = last + 1
+
+        End While
+
+    End Sub
+
+    ''' <summary>
+    ''' Boxes the registers from first to last, and opens up the space above and
+    ''' below that the box is drawn in.
+    ''' </summary>
+    Private Sub AddGroupMark(layout As Grid, first As Integer, last As Integer)
+
+        ' Each end of the group is pushed away from whatever is next to it. Two
+        ' groups meeting therefore get both gaps, which is what two boxes need.
+        RegisterEditors(first).Margin = New Thickness(0, GroupSpacing, 0, RegisterEditors(first).Margin.Bottom)
+        RegisterEditors(last).Margin = New Thickness(0, RegisterEditors(last).Margin.Top, 0, GroupSpacing)
+
+        ' A row with a gap above it has no neighbour to borrow a top border from.
+        RegisterTopEdge(first) = True
+        If last + 1 < RegisterEditors.Count Then RegisterTopEdge(last + 1) = True
+
+        Dim brushKey As String = If(GroupMarks.Count Mod 2 = 0, "Brush_Group_Box_1", "Brush_Group_Box_2")
+        Dim ink As Brush = TryCast(TryFindResource(brushKey), Brush)
+
+        ' Filled, not just outlined. The registers are opaque and sit on top, so all
+        ' that shows of the fill is the part of the balloon they do not cover: a
+        ' solid bar down the gutter either side of them.
+        Dim box As New Border With {
+            .BorderBrush = ink,
+            .Background = ink,
+            .BorderThickness = New Thickness(GroupBoxThickness),
+            .CornerRadius = New CornerRadius(GroupBoxCorner),
+            .Margin = New Thickness(2, 1, 2, 1),
+            .SnapsToDevicePixels = True,
+            .IsHitTestVisible = False
+        }
+
+        ' Behind the registers. Without this the box is the last child of the grid
+        ' and would paint its fill straight over them.
+        Panel.SetZIndex(box, -1)
+
+        Grid.SetRow(box, first)
+        Grid.SetRowSpan(box, last - first + 1)
+        Grid.SetColumn(box, 0)
+        Grid.SetColumnSpan(box, layout.ColumnDefinitions.Count)
+
+        layout.Children.Add(box)
+
+        Dim mark As New GroupMark(box)
+
+        For index As Integer = first To last
+
+            mark.Members.Add(RegisterEditors(index))
+
+            ' One switch for the group, on the register at the top of it. The rest
+            ' follow it, so a switch of their own could only ever agree with it.
+            RegisterEditors(index).ShowVisibilitySwitch = (index = first)
+
+        Next
+
+        GroupMarks.Add(mark)
 
     End Sub
 

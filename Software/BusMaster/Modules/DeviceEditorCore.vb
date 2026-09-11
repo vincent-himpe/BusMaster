@@ -1,4 +1,4 @@
-' ============================================================================
+﻿' ============================================================================
 '  Modules\DeviceEditorCore.vb
 '
 '  All of the Device Editor's active code. The window's handlers only call in
@@ -36,11 +36,17 @@ Public Module DeviceEditorCore
     ''' <summary>Display index of the Group column.</summary>
     Private Const GroupColumn As Integer = 1
 
+    ''' <summary>
+    ''' Display index of the QuickViz column. Nothing is typed into it - it holds a
+    ''' tick that answers to the mouse - so walking the row steps over it.
+    ''' </summary>
+    Private Const QuickVizColumn As Integer = 2
+
     ''' <summary>Display index of the Register Name column.</summary>
-    Private Const RegisterNameColumn As Integer = 2
+    Private Const RegisterNameColumn As Integer = 3
 
     ''' <summary>Display index of D7. D0 is seven columns further along.</summary>
-    Private Const FirstBitColumn As Integer = 3
+    Private Const FirstBitColumn As Integer = 4
 
     Private Const BitColumnCount As Integer = 8
 
@@ -66,6 +72,9 @@ Public Module DeviceEditorCore
 
     ''' <summary>True once the user has actually changed something.</summary>
     Private IsDirty As Boolean = False
+
+    ''' <summary>True while a group's QuickViz flags are being brought into line.</summary>
+    Private SyncingQuickViz As Boolean = False
 
     ''' <summary>Window title without the dirty marker.</summary>
     Private BaseTitle As String = DialogTitle
@@ -198,7 +207,36 @@ Public Module DeviceEditorCore
         ' table is coloured, so it repaints as it is typed.
         If e.PropertyName = NameOf(DeviceRegisterRow.RegisterGroup) Then RefreshRowShades()
 
+        ' A group is one register, so its rows carry one flag between them.
+        If e.PropertyName = NameOf(DeviceRegisterRow.QuickViz) Then
+            MatchGroupQuickViz(TryCast(sender, DeviceRegisterRow))
+        End If
+
         MarkDirty()
+
+    End Sub
+
+    ''' <summary>
+    ''' Puts the rest of a row's group where that row's QuickViz flag has just gone.
+    ''' Matched on the tag rather than on where the rows sit, so it holds whatever
+    ''' order the table happens to be in.
+    ''' </summary>
+    Private Sub MatchGroupQuickViz(changed As DeviceRegisterRow)
+
+        ' Setting the others raises this again for each of them. One pass is enough.
+        If changed Is Nothing OrElse SyncingQuickViz Then Exit Sub
+
+        Dim tag As String = If(changed.RegisterGroup, String.Empty).Trim()
+        If tag.Length = 0 Then Exit Sub
+
+        SyncingQuickViz = True
+
+        For Each row As DeviceRegisterRow In Rows
+            If String.Equals(If(row.RegisterGroup, String.Empty).Trim(), tag,
+                             StringComparison.OrdinalIgnoreCase) Then row.QuickViz = changed.QuickViz
+        Next
+
+        SyncingQuickViz = False
 
     End Sub
 
@@ -392,6 +430,10 @@ Public Module DeviceEditorCore
         If Not current.IsValid OrElse current.Column Is Nothing Then Exit Sub
 
         Dim target As Integer = current.Column.DisplayIndex + offset
+
+        ' Nothing to type in the QuickViz cell, so walking the row goes straight
+        ' past it in whichever direction it was going.
+        If target = QuickVizColumn Then target += offset
 
         If target < 0 Then target = 0
         If target > grid.Columns.Count - 1 Then target = grid.Columns.Count - 1
@@ -820,6 +862,20 @@ Public Module DeviceEditorCore
     End Function
 
     ''' <summary>
+    ''' Escape cancels the editor. Handled on the way back up rather than on the way
+    ''' down, so a cell being edited gets first refusal: Escape in an open cell
+    ''' throws that edit away and never reaches here.
+    ''' </summary>
+    Public Sub HandleWindowKey(e As KeyEventArgs)
+
+        If e.Key <> Key.Escape Then Exit Sub
+
+        e.Handled = True
+        CancelEditor()
+
+    End Sub
+
+    ''' <summary>
     ''' The window is closing. Anything that is not a deliberate Save or Cancel -
     ''' the caption X, Alt+F4 - is treated as a Cancel and asks first.
     ''' </summary>
@@ -868,6 +924,7 @@ Public Module DeviceEditorCore
                     Rows.Add(New DeviceRegisterRow With {
                         .RegisterAddress = register.RegisterAddress.ToString(CultureInfo.InvariantCulture),
                         .RegisterGroup = If(register.RegisterGroup, String.Empty),
+                        .QuickViz = register.QuickViz,
                         .RegisterName = If(register.RegisterName, String.Empty),
                         .D7 = If(register.D7, String.Empty),
                         .D6 = If(register.D6, String.Empty),
@@ -1194,11 +1251,10 @@ Public Module DeviceEditorCore
 
             Case DeviceEditorMode.mode_New
                 If File.Exists(targetPath) Then
-                    Dim answer As MessageBoxResult = MessageBox.Show(
-                        Editor,
+                    Dim answer As MessageBoxResult = MessagePrompt.AskYesNo(
+                        Editor, DialogTitle,
                         """" & Path.GetFileName(targetPath) & """ already exists." & vbCrLf & vbCrLf &
-                        "Overwrite it?",
-                        DialogTitle, MessageBoxButton.YesNo, MessageBoxImage.Question)
+                        "Overwrite it?")
 
                     ' No means back to the form, so the name can be changed.
                     If answer <> MessageBoxResult.Yes Then
@@ -1310,6 +1366,7 @@ Public Module DeviceEditorCore
             registers.Add(New DeviceRegisterData With {
                 .RegisterAddress = address,
                 .RegisterGroup = If(row.RegisterGroup, String.Empty).Trim(),
+                .QuickViz = row.QuickViz,
                 .RegisterName = If(row.RegisterName, String.Empty).Trim(),
                 .D7 = If(row.D7, String.Empty).Trim(),
                 .D6 = If(row.D6, String.Empty).Trim(),
@@ -1392,6 +1449,16 @@ Public Module DeviceEditorCore
     '  Cancelling
     ' ========================================================================
 
+    ''' <summary>
+    ''' Cancel, from the button or from Escape.
+    '''
+    ''' btn_Cancel deliberately is not IsCancel. That property carries a side effect
+    ''' - after the Click handler WPF closes the dialog itself - and closing goes
+    ''' through Window_Closing, which asks whether to abandon the edits all over
+    ''' again. Answering No to the first question only got you a second one. Marking
+    ''' the click handled does not stop it either, so Escape is taken from the
+    ''' keyboard instead and this is the only way out.
+    ''' </summary>
     Public Sub CancelEditor()
 
         If Editor Is Nothing Then Exit Sub
@@ -1411,11 +1478,10 @@ Public Module DeviceEditorCore
 
         If Not IsDirty Then Return True
 
-        Dim answer As MessageBoxResult = MessageBox.Show(
-            Editor,
+        Dim answer As MessageBoxResult = MessagePrompt.AskYesNo(
+            Editor, DialogTitle,
             "Close the Device Editor without saving?" & vbCrLf & vbCrLf &
-            "Anything typed in will be lost.",
-            DialogTitle, MessageBoxButton.YesNo, MessageBoxImage.Question)
+            "Anything typed in will be lost.")
 
         Return answer = MessageBoxResult.Yes
 
