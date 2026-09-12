@@ -111,6 +111,9 @@ Public Class EventLogRow
             If String.Equals(m_Host, value, StringComparison.Ordinal) Then Exit Property
             m_Host = If(value, String.Empty)
             Announce(NameOf(Host))
+
+            ' The column on screen is this value seen through the DEC/HEX button.
+            Announce(NameOf(HostText))
         End Set
     End Property
 
@@ -122,6 +125,9 @@ Public Class EventLogRow
             If String.Equals(m_Reg, value, StringComparison.Ordinal) Then Exit Property
             m_Reg = If(value, String.Empty)
             Announce(NameOf(Reg))
+
+            ' The column on screen is this value seen through the DEC/HEX button.
+            Announce(NameOf(RegText))
         End Set
     End Property
 
@@ -133,6 +139,9 @@ Public Class EventLogRow
             If String.Equals(m_Value, newValue, StringComparison.Ordinal) Then Exit Property
             m_Value = If(newValue, String.Empty)
             Announce(NameOf(Value))
+
+            ' The column on screen is this value seen through the DEC/HEX button.
+            Announce(NameOf(ValueText))
         End Set
     End Property
 
@@ -146,6 +155,59 @@ Public Class EventLogRow
             Announce(NameOf(Comment))
         End Set
     End Property
+
+
+    ' ========================================================================
+    '  What the three number columns show
+    '
+    '  Host, Reg and Value are always stored in decimal - that is what goes in
+    '  the file, so a log reads back the same whichever way the DEC/HEX button was
+    '  pointing when it was written. These three are the same numbers seen through
+    '  that button, and they are what the grid is bound to.
+    '
+    '  Typing goes back the same way: what is typed is read in whatever radix is
+    '  on show and stored as decimal, so entering 1A in hex and 26 in decimal put
+    '  the same byte in the log.
+    ' ========================================================================
+
+    Public Property HostText As String
+        Get
+            Return Radix.ToDisplay(m_Host, EventLogCore.ShowingHexadecimal)
+        End Get
+        Set(value As String)
+            Host = Radix.FromDisplay(value, EventLogCore.ShowingHexadecimal)
+        End Set
+    End Property
+
+    Public Property RegText As String
+        Get
+            Return Radix.ToDisplay(m_Reg, EventLogCore.ShowingHexadecimal)
+        End Get
+        Set(value As String)
+            Reg = Radix.FromDisplay(value, EventLogCore.ShowingHexadecimal)
+        End Set
+    End Property
+
+    Public Property ValueText As String
+        Get
+            Return Radix.ToDisplay(m_Value, EventLogCore.ShowingHexadecimal)
+        End Get
+        Set(newValue As String)
+            Value = Radix.FromDisplay(newValue, EventLogCore.ShowingHexadecimal)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Says the three display columns have changed without any of the values
+    ''' having moved. Called on every row when the radix is switched.
+    ''' </summary>
+    Public Sub AnnounceRadix()
+
+        Announce(NameOf(HostText))
+        Announce(NameOf(RegText))
+        Announce(NameOf(ValueText))
+
+    End Sub
 
     ''' <summary>
     ''' A breakpoint, set by double-clicking the line number and shown by colouring

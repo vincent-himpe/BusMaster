@@ -94,6 +94,21 @@
                         ToolTip="Empty the log"
                         Click="tlbr_Log_Clear_Click"/>
 
+                <Separator x:Name="tlbr_Log_Separator_3"
+                           DockPanel.Dock="Left"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <!-- The log's own radix, independent of the main window's. Host,
+                     Reg and Value are always stored and saved in decimal; this only
+                     changes how they are read on screen and how anything typed into
+                     them is taken. -->
+                <Button x:Name="tlbr_Log_ValueType"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Text_Button}"
+                        Content="DEC"
+                        ToolTip="Show Host, Reg and Value in decimal or hexadecimal.&#x0a;The log file itself is always written in decimal."
+                        Click="tlbr_Log_ValueType_Click"/>
+
             </DockPanel>
         </Border>
 
@@ -137,21 +152,21 @@
                      headings, which are wider than the numbers under them. -->
                 <DataGridTextColumn Header="Host" Width="54"
                                     CanUserSort="False"
-                                    Binding="{Binding Host, UpdateSourceTrigger=PropertyChanged}"
+                                    Binding="{Binding HostText, UpdateSourceTrigger=PropertyChanged}"
                                     CellStyle="{StaticResource Style_Log_Cell}"
                                     ElementStyle="{StaticResource Style_Log_Display}"
                                     EditingElementStyle="{StaticResource Style_Log_Edit_Short}"/>
 
                 <DataGridTextColumn Header="Reg" Width="54"
                                     CanUserSort="False"
-                                    Binding="{Binding Reg, UpdateSourceTrigger=PropertyChanged}"
+                                    Binding="{Binding RegText, UpdateSourceTrigger=PropertyChanged}"
                                     CellStyle="{StaticResource Style_Log_Cell}"
                                     ElementStyle="{StaticResource Style_Log_Display}"
                                     EditingElementStyle="{StaticResource Style_Log_Edit_Short}"/>
 
                 <DataGridTextColumn Header="Value" Width="54"
                                     CanUserSort="False"
-                                    Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                    Binding="{Binding ValueText, UpdateSourceTrigger=PropertyChanged}"
                                     CellStyle="{StaticResource Style_Log_Cell}"
                                     ElementStyle="{StaticResource Style_Log_Display}"
                                     EditingElementStyle="{StaticResource Style_Log_Edit_Short}"/>

@@ -390,6 +390,30 @@ Public Class BitFieldEditor
         End RaiseEvent
     End Event
 
+    ''' <summary>
+    ''' Raised by a Shift+right-click: read every register of this one's group.
+    '''
+    ''' Like ReadAllRequested, this goes to the DevicePanel and no further, because
+    ''' the panel is what knows which registers are grouped with which - a register
+    ''' has no idea it is half of something wider. A register in no group leaves the
+    ''' panel with nothing to do, which is the right answer for a plain 8 bit one.
+    ''' </summary>
+    Public Shared ReadOnly ReadGroupRequestedEvent As RoutedEvent =
+        EventManager.RegisterRoutedEvent("ReadGroupRequested", RoutingStrategy.Bubble,
+                                         GetType(RoutedEventHandler), GetType(BitFieldEditor))
+
+    Public Custom Event ReadGroupRequested As RoutedEventHandler
+        AddHandler(handler As RoutedEventHandler)
+            Me.AddHandler(ReadGroupRequestedEvent, handler)
+        End AddHandler
+        RemoveHandler(handler As RoutedEventHandler)
+            Me.RemoveHandler(ReadGroupRequestedEvent, handler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As RoutedEventArgs)
+            MyBase.RaiseEvent(e)
+        End RaiseEvent
+    End Event
+
 
     ' ========================================================================
     '  Construction and templating
@@ -545,17 +569,26 @@ Public Class BitFieldEditor
 
     ''' <summary>
     ''' A right-click anywhere across the eight regions asks for the byte to be read
-    ''' back; holding Ctrl asks for the whole device instead. Only the regions do
-    ''' this - the name, the value box and the padlock are not the byte.
+    ''' back. Ctrl asks for the whole device instead, and Shift for this register's
+    ''' group - the two halves of a 16 bit register are one register, so reading one
+    ''' of them on its own is rarely what was meant. Only the regions do this - the
+    ''' name, the value box and the padlock are not the byte.
     '''
     ''' A modifier rather than a double-click, so neither gesture is a prefix of the
     ''' other: the plain read happens the instant the button comes up, and reading a
     ''' device never begins by reading one register out of turn.
+    '''
+    ''' Ctrl wins if both are held. It is the wider of the two, and a gesture that
+    ''' does more than was asked for is worse than one that does less.
     ''' </summary>
     Private Sub Region_MouseRightButtonUp(sender As Object, e As MouseButtonEventArgs)
 
         If (Keyboard.Modifiers And ModifierKeys.Control) = ModifierKeys.Control Then
             MyBase.RaiseEvent(New RoutedEventArgs(ReadAllRequestedEvent, Me))
+
+        ElseIf (Keyboard.Modifiers And ModifierKeys.Shift) = ModifierKeys.Shift Then
+            MyBase.RaiseEvent(New RoutedEventArgs(ReadGroupRequestedEvent, Me))
+
         Else
             RequestRead()
         End If

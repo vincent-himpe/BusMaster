@@ -127,6 +127,20 @@
                     </StackPanel>
                 </Button>
 
+                <!-- Register Address only. The bit names are words and the group tag
+                     is a label, so neither has a radix to switch; this is the one
+                     column in the table that holds a number. -->
+                <Separator x:Name="tlbr_Registers_Divider_Radix"
+                           DockPanel.Dock="Left"
+                           Style="{StaticResource Style_Toolbar_Separator}"/>
+
+                <Button x:Name="tlbr_AddressRadix"
+                        DockPanel.Dock="Left"
+                        Style="{StaticResource Style_Toolbar_Text_Button}"
+                        Content="DEC"
+                        ToolTip="Show Register Address in decimal or hexadecimal.&#x0a;The device file itself is always written in decimal."
+                        Click="tlbr_AddressRadix_Click"/>
+
                 <Button x:Name="tlbr_DeleteRow"
                         DockPanel.Dock="Right"
                         Style="{StaticResource Style_Toolbar_Button}"
@@ -171,7 +185,7 @@
                      the toolbar's sort button is the only way, so a stray click on the
                      header cannot rearrange the table. -->
                 <DataGridTextColumn Header="Register Address" Width="100"
-                                    Binding="{Binding RegisterAddress, UpdateSourceTrigger=PropertyChanged}"
+                                    Binding="{Binding RegisterAddressText, UpdateSourceTrigger=PropertyChanged}"
                                     CanUserSort="False"
                                     CellStyle="{StaticResource Style_Grid_Cell_Address}"
                                     ElementStyle="{StaticResource Style_Grid_Display}"

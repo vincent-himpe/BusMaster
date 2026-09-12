@@ -8,10 +8,20 @@
 '  one body at a time as the real work lands.
 ' ============================================================================
 
-''' <summary>When a change made on screen is written out to the bus.</summary>
+''' <summary>
+''' How much of a device a bulk operation covers - both the one that follows a
+''' change made on screen and the ones asked for outright.
+'''
+''' Register is the narrow one: a change writes that register and nothing else,
+''' and only a Shift+click widens it to the register's group. The other two name a
+''' set instead. Device is every register the part has. Visible is every register
+''' whose visibility switch is on, which is what makes hiding a register mean
+''' "leave this one alone" rather than only "take it off my screen".
+''' </summary>
 Public Enum BusOperationMode
     mode_RegisterOnChange = 0
     mode_DeviceOnChange = 1
+    mode_VisibleOnChange = 2
 End Enum
 
 Public Module BusActions

@@ -93,8 +93,41 @@ Public Class DeviceRegisterRow
         End Get
         Set(value As String)
             Assign(m_RegisterAddress, value, NameOf(RegisterAddress))
+
+            ' The cell on screen is this address seen through the editor's DEC/HEX
+            ' button.
+            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(RegisterAddressText)))
         End Set
     End Property
+
+    ''' <summary>
+    ''' The address as the grid shows it, which is the only thing the editor's
+    ''' DEC/HEX button changes. RegisterAddress itself stays decimal, because that is
+    ''' what the .DEV file holds and what everything that validates or sorts an
+    ''' address reads - a device file means the same thing whichever way the button
+    ''' was pointing when it was written.
+    '''
+    ''' Typing goes back the same way, so 1A entered in hexadecimal and 26 entered in
+    ''' decimal are the same register.
+    ''' </summary>
+    Public Property RegisterAddressText As String
+        Get
+            Return Radix.ToDisplay(m_RegisterAddress, DeviceEditorCore.ShowingHexadecimal)
+        End Get
+        Set(value As String)
+            RegisterAddress = Radix.FromDisplay(value, DeviceEditorCore.ShowingHexadecimal)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Says the address cell has changed without the address having moved. Called on
+    ''' every row when the editor's radix is switched.
+    ''' </summary>
+    Public Sub AnnounceRadix()
+
+        RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(NameOf(RegisterAddressText)))
+
+    End Sub
 
     ''' <summary>
     ''' Group tag. Blank means an ordinary 8 bit register; a tag shared with the row

@@ -731,6 +731,9 @@ Public Module AppCore
             Case 1
                 OperationMode = BusOperationMode.mode_DeviceOnChange
                 SetStatus("Operation: write the whole device when anything changes")
+            Case 2
+                OperationMode = BusOperationMode.mode_VisibleOnChange
+                SetStatus("Operation: write every visible register when anything changes")
             Case Else
                 OperationMode = BusOperationMode.mode_RegisterOnChange
                 SetStatus("Operation: write a register when it changes")
@@ -948,12 +951,22 @@ Public Module AppCore
             "   Left-click a bit - toggle it, and write it out" & vbCrLf &
             "   Right-click the bits - read that register" & vbCrLf &
             "   Ctrl+right-click the bits - read every register on the device" & vbCrLf &
+            "   Shift+right-click the bits - read the whole of a 16 or 32 bit" & vbCrLf &
+            "      register, both or all four of its bytes" & vbCrLf &
+            "   Shift+left-click a bit - write the whole of it the same way" & vbCrLf &
             "   Padlock - keep the register on show when the device is closed" & vbCrLf & vbCrLf &
             "Toolbar" & vbCrLf &
-            "   Operation - whether a change writes just that register, or the" & vbCrLf &
-            "      whole device it belongs to" & vbCrLf &
+            "   Operation - how much goes out when a register changes: just that" & vbCrLf &
+            "      register, the whole device, or every visible register on it." & vbCrLf &
+            "      Visible On Change also narrows Write All, Read All and a" & vbCrLf &
+            "      whole-device read, so hiding a register keeps it off the bus" & vbCrLf &
             "   Write All - write every register on every device" & vbCrLf &
             "   Read All - read every register on every device" & vbCrLf & vbCrLf &
+            "Device Editor" & vbCrLf &
+            "   Enter in Register Name - move down to the next register" & vbCrLf &
+            "   Enter in a bit column - fill it in and move along, folding round" & vbCrLf &
+            "      to the next row's D7 at the end" & vbCrLf &
+            "   Ctrl+Delete - delete the row the cursor is on" & vbCrLf & vbCrLf &
             "Device header" & vbCrLf &
             "   Click the name - rename it" & vbCrLf &
             "   Drag the bars - move the device up or down the stack" & vbCrLf &

@@ -45,4 +45,8 @@ Class EventLogWindow
         EventLogCore.ClearLog()
     End Sub
 
+    Private Sub tlbr_Log_ValueType_Click(sender As Object, e As RoutedEventArgs)
+        EventLogCore.ToggleRadix()
+    End Sub
+
 End Class

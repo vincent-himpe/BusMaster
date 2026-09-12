@@ -362,6 +362,11 @@ Public Class DevicePanel
         Me.AddHandler(BitFieldEditor.ReadAllRequestedEvent,
                       New RoutedEventHandler(AddressOf Registers_ReadAllRequested))
 
+        ' And so is read-the-group, for the same reason: the register that was
+        ' clicked does not know which others are part of it.
+        Me.AddHandler(BitFieldEditor.ReadGroupRequestedEvent,
+                      New RoutedEventHandler(AddressOf Registers_ReadGroupRequested))
+
         ' So is keeping a group's registers on show together. The panel is the only
         ' thing that knows which registers are one register.
         Me.AddHandler(BitFieldEditor.LockChangedEvent,
@@ -407,6 +412,28 @@ Public Class DevicePanel
     End Sub
 
     ''' <summary>
+    ''' A Shift+right-click on a register asks for the whole of the register it is
+    ''' part of. A register in no group is already whole, so that reads as the plain
+    ''' single read it would have been without the Shift.
+    ''' </summary>
+    Private Sub Registers_ReadGroupRequested(sender As Object, e As RoutedEventArgs)
+
+        Dim clicked As BitFieldEditor = TryCast(e.OriginalSource, BitFieldEditor)
+
+        e.Handled = True
+
+        If clicked Is Nothing Then Exit Sub
+
+        If GroupMembers(clicked).Count = 0 Then
+            clicked.RequestRead()
+            Exit Sub
+        End If
+
+        BusEvents.ReadGroup(Me, clicked)
+
+    End Sub
+
+    ''' <summary>
     ''' Reads every register in this panel, one after another, in the order the
     ''' device file lists them. Each goes out through its own RequestRead, so a
     ''' whole-device read is nothing more than the single reads it is made of.
@@ -428,6 +455,74 @@ Public Class DevicePanel
     Public Sub WriteAllRegisters()
 
         For Each editor As BitFieldEditor In RegisterEditors
+            editor.RequestWrite()
+        Next
+
+    End Sub
+
+    ''' <summary>
+    ''' Reads only the registers whose visibility switch is on. What "Visible On
+    ''' Change" acts on: the switch stops being only about what is on screen and
+    ''' becomes which registers the program is interested in at all.
+    ''' </summary>
+    Public Sub ReadVisibleRegisters()
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            If editor.IsLocked Then editor.RequestRead()
+        Next
+
+    End Sub
+
+    ''' <summary>Writes only the registers whose visibility switch is on.</summary>
+    Public Sub WriteVisibleRegisters()
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            If editor.IsLocked Then editor.RequestWrite()
+        Next
+
+    End Sub
+
+    ''' <summary>How many registers a visible-only operation would touch.</summary>
+    Public Function VisibleRegisterCount() As Integer
+
+        Dim count As Integer = 0
+
+        For Each editor As BitFieldEditor In RegisterEditors
+            If editor.IsLocked Then count += 1
+        Next
+
+        Return count
+
+    End Function
+
+    ''' <summary>
+    ''' The registers making up the group this one belongs to, in address order, or
+    ''' an empty list if it is on its own. A 16 bit register is two of these and a
+    ''' 32 bit one is four, so this is what a Shift+click acts on.
+    ''' </summary>
+    Public Function GroupMembers(editor As BitFieldEditor) As List(Of BitFieldEditor)
+
+        Dim mark As GroupMark = MarkHolding(editor)
+
+        If mark Is Nothing Then Return New List(Of BitFieldEditor)
+
+        Return New List(Of BitFieldEditor)(mark.Members)
+
+    End Function
+
+    ''' <summary>Reads every register of one register's group.</summary>
+    Public Sub ReadGroup(member As BitFieldEditor)
+
+        For Each editor As BitFieldEditor In GroupMembers(member)
+            editor.RequestRead()
+        Next
+
+    End Sub
+
+    ''' <summary>Writes every register of one register's group.</summary>
+    Public Sub WriteGroup(member As BitFieldEditor)
+
+        For Each editor As BitFieldEditor In GroupMembers(member)
             editor.RequestWrite()
         Next
 

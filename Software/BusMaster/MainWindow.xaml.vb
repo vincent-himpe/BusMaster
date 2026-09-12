@@ -116,6 +116,14 @@ Class MainWindow
         AppCore.ShowProjectFolder()
     End Sub
 
+    Private Sub mnu_Tools_Probe_Firmware_Update_Click(sender As Object, e As RoutedEventArgs)
+        ProbeFirmware.UpdateFirmware()
+    End Sub
+
+    Private Sub mnu_Tools_Probe_Firmware_Provision_Click(sender As Object, e As RoutedEventArgs)
+        ProbeFirmware.ProvisionProbe()
+    End Sub
+
     ' -- Tool bar -------------------------------------------------------------
 
     Private Sub tlbr_Open_Click(sender As Object, e As RoutedEventArgs)

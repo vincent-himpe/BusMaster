@@ -175,6 +175,13 @@
          already disabled; this is what makes them look it. -->
     <SolidColorBrush x:Key="Brush_Modal_Shade"             Color="#66000000"/>
 
+    <!-- The Provision Probe window's status line. Three answers, and the colour is
+         most of the message: nothing there, something there, and it is done. Red
+         is the failure, which is the only thing red means anywhere here. -->
+    <SolidColorBrush x:Key="Brush_Provision_Missing"       Color="#FFE05C5C"/>  <!-- red -->
+    <SolidColorBrush x:Key="Brush_Provision_Found"         Color="#FF90EE90"/>  <!-- light green -->
+    <SolidColorBrush x:Key="Brush_Provision_Done"          Color="#FF9CDCFE"/>  <!-- light blue -->
+
     <!-- Laid over the main window while a tool window is being dragged near
          enough to one of its edges to stick to it. Lighter than the modal shade
          on purpose: that one means stop, this one means carry on, you are nearly

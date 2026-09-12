@@ -79,22 +79,55 @@ Public Module BusEvents
         If editor Is Nothing Then Exit Sub
 
         ' How much goes out is the Operation setting's business, not this control's.
-        If AppCore.OperationMode = BusOperationMode.mode_DeviceOnChange Then
+        ' A register with no device around it has only itself to write whatever the
+        ' setting says, so every branch below falls through to the single write.
+        Dim panel As DevicePanel = OwningPanel(editor)
 
-            Dim panel As DevicePanel = OwningPanel(editor)
+        If panel IsNot Nothing Then
 
-            If panel IsNot Nothing Then
-                WriteDevice(panel)
-                Exit Sub
-            End If
+            Select Case AppCore.OperationMode
 
-            ' A register with no device around it has only itself to write.
+                Case BusOperationMode.mode_DeviceOnChange
+                    WriteDevice(panel)
+                    Exit Sub
+
+                Case BusOperationMode.mode_VisibleOnChange
+                    WriteVisible(panel)
+                    Exit Sub
+
+                Case Else
+
+                    ' Register On Change stays one register, exactly as before -
+                    ' unless Shift is down and this register is part of a wider one,
+                    ' which is the one gesture that widens it.
+                    '
+                    ' Read here rather than carried from the click because this event
+                    ' is only ever raised by the user changing the value: loading a
+                    ' device or a Write All sets values in code and deliberately does
+                    ' not raise it, so there is no sweep in progress whose registers
+                    ' could each try to write their own group.
+                    If ShiftHeld() AndAlso panel.GroupMembers(editor).Count > 0 Then
+                        WriteGroup(panel, editor)
+                        Exit Sub
+                    End If
+
+            End Select
 
         End If
 
         editor.RequestWrite()
 
     End Sub
+
+    ''' <summary>
+    ''' Whether Shift is down right now. Only meaningful while handling something
+    ''' the user just did.
+    ''' </summary>
+    Private Function ShiftHeld() As Boolean
+
+        Return (Keyboard.Modifiers And ModifierKeys.Shift) = ModifierKeys.Shift
+
+    End Function
 
 
     ' ========================================================================
@@ -125,10 +158,45 @@ Public Module BusEvents
     Private Const BlockBeginSystemRead As String = "============== Begin System Read  =============="
     Private Const BlockEndSystemRead As String = "===------------ End System Read  ------------==="
 
+    Private Const BlockBeginVisibleWrite As String = "---========== Begin Visible Write ===========---"
+    Private Const BlockEndVisibleWrite As String = "-------------- End Visible Write ---------------"
+
+    Private Const BlockBeginVisibleRead As String = "---=========== Begin Visible Read ===========---"
+    Private Const BlockEndVisibleRead As String = "--------------- End Visible Read ---------------"
+
+    Private Const BlockBeginGroupWrite As String = "---=========== Begin Group Write ============---"
+    Private Const BlockEndGroupWrite As String = "--------------- End Group Write ----------------"
+
+    Private Const BlockBeginGroupRead As String = "---============ Begin Group Read ============---"
+    Private Const BlockEndGroupRead As String = "---------------- End Group Read ----------------"
+
+    ''' <summary>
+    ''' Whether the Operation setting says hidden registers are out of play.
+    '''
+    ''' "Visible On Change" is not only about what follows a change: it is what the
+    ''' word visible is taken to mean everywhere, so every sweep of a device narrows
+    ''' to the switched-on registers - the device header's two buttons,
+    ''' Ctrl+right-click, and Write All and Read All as well. One rule, and turning a
+    ''' register's switch off is enough to keep the program off it entirely.
+    '''
+    ''' A single register asked for on its own is never narrowed. The user pointed
+    ''' at it.
+    ''' </summary>
+    Private Function VisibleOnly() As Boolean
+
+        Return AppCore.OperationMode = BusOperationMode.mode_VisibleOnChange
+
+    End Function
+
     ''' <summary>Writes every register on one device, as one labelled block.</summary>
     Public Sub WriteDevice(panel As DevicePanel)
 
         If panel Is Nothing Then Exit Sub
+
+        If VisibleOnly() Then
+            WriteVisible(panel)
+            Exit Sub
+        End If
 
         AsBlock(BlockBeginDeviceWrite, BlockEndDeviceWrite, Sub() panel.WriteAllRegisters())
 
@@ -139,7 +207,55 @@ Public Module BusEvents
 
         If panel Is Nothing Then Exit Sub
 
+        If VisibleOnly() Then
+            ReadVisible(panel)
+            Exit Sub
+        End If
+
         AsBlock(BlockBeginDeviceRead, BlockEndDeviceRead, Sub() panel.ReadAllRegisters())
+
+    End Sub
+
+    ''' <summary>
+    ''' Writes the visible registers of one device, as one labelled block. What
+    ''' "Visible On Change" does after any one register is touched.
+    ''' </summary>
+    Public Sub WriteVisible(panel As DevicePanel)
+
+        If panel Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginVisibleWrite, BlockEndVisibleWrite, Sub() panel.WriteVisibleRegisters())
+
+    End Sub
+
+    ''' <summary>Reads the visible registers of one device, as one labelled block.</summary>
+    Public Sub ReadVisible(panel As DevicePanel)
+
+        If panel Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginVisibleRead, BlockEndVisibleRead, Sub() panel.ReadVisibleRegisters())
+
+    End Sub
+
+    ''' <summary>
+    ''' Writes every register of one register's group, as one labelled block. A 16
+    ''' bit register is two of these and a 32 bit one is four; the block label is
+    ''' what says in the log that they went out as one thing.
+    ''' </summary>
+    Public Sub WriteGroup(panel As DevicePanel, member As BitFieldEditor)
+
+        If panel Is Nothing OrElse member Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginGroupWrite, BlockEndGroupWrite, Sub() panel.WriteGroup(member))
+
+    End Sub
+
+    ''' <summary>Reads every register of one register's group, as one block.</summary>
+    Public Sub ReadGroup(panel As DevicePanel, member As BitFieldEditor)
+
+        If panel Is Nothing OrElse member Is Nothing Then Exit Sub
+
+        AsBlock(BlockBeginGroupRead, BlockEndGroupRead, Sub() panel.ReadGroup(member))
 
     End Sub
 
@@ -153,7 +269,11 @@ Public Module BusEvents
         AsBlock(BlockBeginSystemWrite, BlockEndSystemWrite,
                 Sub()
                     For Each panel As DevicePanel In AppCore.DevicePanels()
-                        panel.WriteAllRegisters()
+                        If VisibleOnly() Then
+                            panel.WriteVisibleRegisters()
+                        Else
+                            panel.WriteAllRegisters()
+                        End If
                     Next
                 End Sub)
 
@@ -165,7 +285,11 @@ Public Module BusEvents
         AsBlock(BlockBeginSystemRead, BlockEndSystemRead,
                 Sub()
                     For Each panel As DevicePanel In AppCore.DevicePanels()
-                        panel.ReadAllRegisters()
+                        If VisibleOnly() Then
+                            panel.ReadVisibleRegisters()
+                        Else
+                            panel.ReadAllRegisters()
+                        End If
                     Next
                 End Sub)
 
@@ -224,13 +348,19 @@ Public Module BusEvents
 
         Dim change As RegisterChange = Describe(editor)
 
-        editor.Value = ReadRegister(change.Hostaddress, change.Registeraddress)
+        Dim fetched As Byte = ReadRegister(change.Hostaddress, change.Registeraddress)
 
-        ' Logged like a write, but the value column says "---" rather than what came
-        ' back. A replayed line is an instruction, not a recording: this one says
-        ' "read this register", and what it returns is for then, not for now.
+        editor.Value = fetched
+
+        ' The value column carries what came back. A log is worth keeping mainly for
+        ' what the part said, and a column of "---" threw that away - the only record
+        ' of the answer was the register on screen, which the next read overwrote.
+        '
+        ' What makes a read line still readable as an instruction rather than as
+        ' something to put back on the bus is the "<" in the comment, not an empty
+        ' value column. Replay reads the lead-in.
         If AppCore.IsRecording Then
-            AddLogentry(change.Hostaddress, change.Registeraddress, ReadPlaceholder,
+            AddLogentry(change.Hostaddress, change.Registeraddress, fetched,
                         CommentFor(change, ReadLeadIn))
         End If
 
@@ -296,9 +426,10 @@ Public Module BusEvents
     Public Const ReadLeadIn As String = "<"
 
     ''' <summary>
-    ''' What stands in the value column for a read. A read carries no value out of
-    ''' here - it is a request - and anything in that column would read as data the
-    ''' user had put on the bus.
+    ''' What stood in the value column for a read until 2026-09-11, when reads
+    ''' started recording what came back instead. Kept because a log written before
+    ''' then still has it in the file, and anything reading a log back - replay, when
+    ''' it is written - has to recognise it rather than try to make a number of it.
     ''' </summary>
     Public Const ReadPlaceholder As String = "---"
 

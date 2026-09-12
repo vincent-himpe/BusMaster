@@ -54,6 +54,55 @@ Public Module EventLogCore
 
 
     ' ========================================================================
+    '  Decimal / hexadecimal
+    '
+    '  The log's own switch, with nothing to do with the main window's. The two
+    '  are read for different reasons and at different times - the registers on
+    '  screen are what a part holds now, the log is what went past - and having to
+    '  change one to read the other would be a nuisance rather than a convenience.
+    '
+    '  Host, Reg and Value are stored in decimal whatever this says, and that is
+    '  what is written to the file. Only the three columns on screen change, and
+    '  the comment column never does: it is prose.
+    ' ========================================================================
+
+    ''' <summary>
+    ''' Whether the log's three number columns are being read as hexadecimal. Public
+    ''' because the row itself converts through it - see EventLogRow.HostText.
+    ''' </summary>
+    Public Property ShowingHexadecimal As Boolean = False
+
+    Public Sub ToggleRadix()
+
+        ShowingHexadecimal = Not ShowingHexadecimal
+
+        ' Nothing has moved; the columns are just read a different way now.
+        If Rows IsNot Nothing Then
+            For Each row As EventLogRow In Rows
+                row.AnnounceRadix()
+            Next
+        End If
+
+        RefreshRadixButton()
+
+        AppCore.SetStatus("Event log values shown in " &
+                          If(ShowingHexadecimal, "hexadecimal", "decimal"))
+
+    End Sub
+
+    ''' <summary>Keeps the toolbar button showing which way the log is being read.</summary>
+    Private Sub RefreshRadixButton()
+
+        If Log Is Nothing Then Exit Sub
+
+        Log.tlbr_Log_ValueType.Content = Radix.Caption(ShowingHexadecimal)
+        Log.tlbr_Log_ValueType.Foreground = TryCast(
+            Log.TryFindResource(Radix.BrushKey(ShowingHexadecimal)), Brush)
+
+    End Sub
+
+
+    ' ========================================================================
     '  Where logs live
     ' ========================================================================
 
@@ -91,6 +140,7 @@ Public Module EventLogCore
         ' There has to be somewhere to start typing.
         Rows.Add(New EventLogRow)
 
+        RefreshRadixButton()
         RefreshTitle()
 
     End Sub

@@ -54,6 +54,18 @@ Public Module DeviceEditorCore
     Private Const ByteRegisterRows As Integer = 1
     Private Const WordRegisterRows As Integer = 2
 
+    ''' <summary>
+    ''' Whether the Register Address column is being read as hexadecimal. Its own
+    ''' switch, with nothing to do with the main window's or the Event Log's: a data
+    ''' sheet numbers its registers one way and the user follows it while typing
+    ''' them in, whatever they happen to be looking at values in elsewhere.
+    '''
+    ''' Public because the row converts through it - see
+    ''' DeviceRegisterRow.RegisterAddressText. The stored address stays decimal, so
+    ''' validation, sorting and the .DEV file are untouched by this.
+    ''' </summary>
+    Public Property ShowingHexadecimal As Boolean = False
+
 
     Private Editor As DeviceEditorWindow
     Private Rows As ObservableCollection(Of DeviceRegisterRow)
@@ -100,6 +112,11 @@ Public Module DeviceEditorCore
         Rows = New ObservableCollection(Of DeviceRegisterRow)
         AddHandler Rows.CollectionChanged, AddressOf Rows_CollectionChanged
         Editor.grd_Registers.ItemsSource = Rows
+
+        ' Every editor opens in decimal, whatever the last one was left showing. The
+        ' radix is a way of reading this table, not a setting about the part.
+        ShowingHexadecimal = False
+        RefreshRadixButton()
 
         AttachFieldGuards()
 
@@ -271,13 +288,16 @@ Public Module DeviceEditorCore
     ' ========================================================================
     '  Grid navigation and row management
     '
-    '  The table is filled in a row at a time, so it moves sideways rather than
-    '  downwards:
+    '  The table is filled in two passes, and Enter follows whichever one the
+    '  column says the user is on: down the Register Name column to name the
+    '  registers, then across the bit columns to fill them in, folding round to the
+    '  next row at the end of each. See StepOnEnter.
     '
-    '      Enter          next cell to the right, stopping at the end of the row.
+    '      Enter          next cell to the right - but straight down from Register
+    '                     Name, and round to the next row's D7 from the last column.
     '                     On an empty D7..D0 cell it first drops that column's bit
     '                     number in, so holding Enter across the bit columns fills
-    '                     them 7 6 5 4 3 2 1 0.
+    '                     them 7 6 5 4 3 2 1 0 and then starts the next row.
     '      Ctrl+Delete    remove the current row, never the last one left
     '      Right          next cell, but only once the caret is past the last
     '                     character - otherwise it walks through the text
@@ -303,7 +323,7 @@ Public Module DeviceEditorCore
                 ' Filling a bit cell and stepping on are the same keystroke, so
                 ' holding Enter walks D7 down to D0.
                 FillBlankBitCell()
-                MoveCell(1)
+                StepOnEnter()
                 e.Handled = True
 
             Case Key.Delete
@@ -419,6 +439,69 @@ Public Module DeviceEditorCore
     End Function
 
     ''' <summary>
+    ''' Where Enter goes, which depends on what the user is in the middle of doing.
+    ''' There are two jobs, and the caret follows whichever one the column says:
+    '''
+    '''   Register Name  straight down, same column. Naming the registers is a pass
+    '''                  down the table, not across it, so Enter after each name
+    '''                  lands on the next one.
+    '''
+    '''   Last column    on to the next row's D7. Filling the bit names is a pass
+    '''                  across, and D0 is where a row runs out - before this, Enter
+    '''                  there did nothing at all and the user had to reach for the
+    '''                  mouse to start the next row.
+    '''
+    '''   anything else  the next cell along, as before.
+    '''
+    ''' Between them, a table is typed in two passes with Enter and nothing else:
+    ''' down the names, then across the bits, folding round each row.
+    '''
+    ''' Neither wrap adds a row - that is the toolbar's 8 and 16 buttons' job - so
+    ''' Enter on the last row stays where it is.
+    ''' </summary>
+    Private Sub StepOnEnter()
+
+        Dim grid As DataGrid = Editor.grd_Registers
+        Dim current As DataGridCellInfo = grid.CurrentCell
+
+        If Not current.IsValid OrElse current.Column Is Nothing Then Exit Sub
+
+        Dim column As Integer = current.Column.DisplayIndex
+
+        If column = RegisterNameColumn Then
+            FocusCellBelow(current.Item, RegisterNameColumn)
+            Exit Sub
+        End If
+
+        If column >= grid.Columns.Count - 1 Then
+            FocusCellBelow(current.Item, FirstBitColumn)
+            Exit Sub
+        End If
+
+        MoveCell(1)
+
+    End Sub
+
+    ''' <summary>
+    ''' Opens a cell on the row below this one. Does nothing at the bottom of the
+    ''' table, which leaves the caret where it is rather than sending it somewhere
+    ''' the user was not expecting.
+    ''' </summary>
+    Private Sub FocusCellBelow(rowItem As Object, displayIndex As Integer)
+
+        If Rows Is Nothing Then Exit Sub
+
+        Dim row As DeviceRegisterRow = TryCast(rowItem, DeviceRegisterRow)
+        If row Is Nothing Then Exit Sub
+
+        Dim index As Integer = Rows.IndexOf(row)
+        If index < 0 OrElse index > Rows.Count - 2 Then Exit Sub
+
+        FocusCell(Rows(index + 1), displayIndex)
+
+    End Sub
+
+    ''' <summary>
     ''' Steps one cell along the current row. Stops at either end rather than
     ''' wrapping onto another row.
     ''' </summary>
@@ -439,6 +522,43 @@ Public Module DeviceEditorCore
         If target > grid.Columns.Count - 1 Then target = grid.Columns.Count - 1
 
         FocusCell(current.Item, target)
+
+    End Sub
+
+    ''' <summary>
+    ''' Switches the Register Address column between decimal and hexadecimal.
+    ''' Nothing is edited: the addresses stay exactly where they were and only the
+    ''' way they are written changes, so this can be pressed halfway through typing
+    ''' a table without losing anything.
+    ''' </summary>
+    Public Sub ToggleAddressRadix()
+
+        If Editor Is Nothing Then Exit Sub
+
+        ' Whatever is half-typed in the open cell belongs to the radix it was typed
+        ' in, so it has to be taken in before the radix changes under it.
+        Editor.grd_Registers.CommitEdit(DataGridEditingUnit.Cell, True)
+
+        ShowingHexadecimal = Not ShowingHexadecimal
+
+        If Rows IsNot Nothing Then
+            For Each row As DeviceRegisterRow In Rows
+                row.AnnounceRadix()
+            Next
+        End If
+
+        RefreshRadixButton()
+
+    End Sub
+
+    ''' <summary>Keeps the button showing which way the column is being read.</summary>
+    Private Sub RefreshRadixButton()
+
+        If Editor Is Nothing Then Exit Sub
+
+        Editor.tlbr_AddressRadix.Content = Radix.Caption(ShowingHexadecimal)
+        Editor.tlbr_AddressRadix.Foreground = TryCast(
+            Editor.TryFindResource(Radix.BrushKey(ShowingHexadecimal)), Brush)
 
     End Sub
 

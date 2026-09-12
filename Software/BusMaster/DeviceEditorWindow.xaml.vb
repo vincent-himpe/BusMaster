@@ -86,6 +86,10 @@ Class DeviceEditorWindow
         DeviceEditorCore.SortRowsByAddress()
     End Sub
 
+    Private Sub tlbr_AddressRadix_Click(sender As Object, e As RoutedEventArgs)
+        DeviceEditorCore.ToggleAddressRadix()
+    End Sub
+
     ' -- Buttons --------------------------------------------------------------
 
     Private Sub btn_Save_Click(sender As Object, e As RoutedEventArgs)
